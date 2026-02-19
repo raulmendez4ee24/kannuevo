@@ -16,9 +16,17 @@ git push -u origin main
 2. Selecciona tu repo
 3. Railway detecta el `Dockerfile` del root y construye el servicio.
 
-## 3) Agrega Postgres
+## 3) Agrega Postgres y conéctalo
 1. En tu proyecto → **Add** → **Database** → **PostgreSQL**
-2. Railway crea el plugin y expone `DATABASE_URL` al servicio (o compártelo manualmente si hace falta).
+2. Railway crea el servicio PostgreSQL
+3. **IMPORTANTE**: Conecta PostgreSQL a tu servicio principal:
+   - Ve a tu servicio principal (el que ejecuta tu código)
+   - Haz clic en la pestaña **"Variables"**
+   - Haz clic en **"New Variable"** o **"Reference Variable"**
+   - Selecciona el servicio PostgreSQL
+   - Selecciona la variable `DATABASE_URL`
+   - O simplemente haz clic en el servicio PostgreSQL → **"Connect"** → selecciona tu servicio principal
+4. Verifica que `DATABASE_URL` aparezca en las variables de tu servicio principal
 
 ## 4) Variables de entorno recomendadas (Service → Variables)
 - `COOKIE_SECURE=true`
