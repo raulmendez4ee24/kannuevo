@@ -140,7 +140,7 @@ export default function HUD({ currentSection = 'INICIO' }: HUDProps) {
 
               {/* CTA Button */}
               <motion.a
-                href="#workforce"
+                href="#services"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 className="hidden sm:flex items-center gap-2 px-5 py-2.5 bg-cyber-cyan/10 border border-cyber-cyan text-cyber-cyan font-mono text-xs tracking-widest hover:bg-cyber-cyan/20 hover:shadow-cyber-glow transition-all duration-300"

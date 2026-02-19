@@ -21,6 +21,7 @@ import {
 import { randomOtpCode, randomToken, sha256 } from './security.js';
 import { sseAddClient, sseBroadcast, ssePing, sseRemoveClient } from './realtime.js';
 import { permissionsForRoles } from './permissions.js';
+import { sendContactEmail, sendAuditEmail } from './email.js';
 
 const app = express();
 app.set('trust proxy', 1);
@@ -1132,6 +1133,46 @@ app.post('/api/admin/impersonate', requireAuth, requirePermission('admin:imperso
     },
   });
   res.json({ ok: true });
+});
+
+// ---- Public Contact Forms ----
+
+app.post('/api/contact', async (req, res) => {
+  const schema = z.object({
+    name: z.string().min(2),
+    email: z.string().email(),
+    message: z.string().min(10),
+  });
+  const body = schema.parse(req.body);
+
+  try {
+    await sendContactEmail(body);
+    res.json({ ok: true });
+  } catch (error) {
+    console.error('[API] Error sending contact email:', error);
+    res.status(500).json({ error: 'FAILED_TO_SEND' });
+  }
+});
+
+app.post('/api/audit', async (req, res) => {
+  const schema = z.object({
+    email: z.string().email(),
+    whatsapp: z.string().optional(),
+    businessName: z.string().min(2),
+    businessType: z.string().min(1),
+    priorities: z.array(z.string()),
+    monthlyLeads: z.string().optional(),
+    monthlyRevenue: z.string().optional(),
+  });
+  const body = schema.parse(req.body);
+
+  try {
+    await sendAuditEmail(body);
+    res.json({ ok: true });
+  } catch (error) {
+    console.error('[API] Error sending audit email:', error);
+    res.status(500).json({ error: 'FAILED_TO_SEND' });
+  }
 });
 
 // ---- Serve Web (optional) ----

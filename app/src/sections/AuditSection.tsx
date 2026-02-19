@@ -42,11 +42,26 @@ export default function AuditSection() {
   });
   const [isSubmitted, setIsSubmitted] = useState(false);
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (currentStep < formSteps.length - 1) {
       setCurrentStep(prev => prev + 1);
     } else {
-      setIsSubmitted(true);
+      // Submit form
+      try {
+        const response = await fetch('/api/audit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData),
+        });
+        if (response.ok) {
+          setIsSubmitted(true);
+        } else {
+          alert('Error al enviar la auditoría. Por favor intenta de nuevo.');
+        }
+      } catch (error) {
+        console.error('Error sending audit form:', error);
+        alert('Error al enviar la auditoría. Por favor intenta de nuevo.');
+      }
     }
   };
 
@@ -215,7 +230,7 @@ export default function AuditSection() {
                           type="tel"
                           value={formData.whatsapp}
                           onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
-                          placeholder="Ej. +52 55 1234 5678"
+                          placeholder="Ej. 523421055712"
                           className="w-full px-4 py-3 bg-steel-gray/50 border border-terminal-gray/50 rounded-lg text-frost-white placeholder-ghost-white/50 focus:border-cyber-cyan focus:outline-none focus:ring-1 focus:ring-cyber-cyan/50 transition-all font-mono text-sm"
                         />
                       </div>

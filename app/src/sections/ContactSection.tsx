@@ -23,23 +23,37 @@ export default function ContactSection() {
     message: '',
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitted(true);
+    try {
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+      if (response.ok) {
+        setIsSubmitted(true);
+      } else {
+        alert('Error al enviar el mensaje. Por favor intenta de nuevo.');
+      }
+    } catch (error) {
+      console.error('Error sending contact form:', error);
+      alert('Error al enviar el mensaje. Por favor intenta de nuevo.');
+    }
   };
 
   const contactMethods = [
     {
       icon: Mail,
       label: 'EMAIL',
-      value: 'hola@kanlogic.systems',
-      href: 'mailto:hola@kanlogic.systems',
+      value: 'kanlogic05@gmail.com',
+      href: 'mailto:kanlogic05@gmail.com',
     },
     {
       icon: Phone,
       label: 'WHATSAPP',
-      value: '+52 55 1234 5678',
-      href: 'https://wa.me/525512345678',
+      value: '523421055712',
+      href: 'https://wa.me/523421055712',
     },
     {
       icon: MapPin,
@@ -107,7 +121,7 @@ export default function ContactSection() {
 
             {/* Quick WhatsApp CTA */}
             <motion.a
-              href="https://wa.me/525512345678"
+              href="https://wa.me/523421055712"
               initial={{ opacity: 0, y: 20 }}
               animate={isInView ? { opacity: 1, y: 0 } : {}}
               transition={{ delay: 0.6 }}

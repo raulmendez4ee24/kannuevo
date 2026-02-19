@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import type { ReactNode } from 'react';
+import { handleAnchorClick } from '../../utils/scroll';
 
 interface CyberButtonProps {
   children: ReactNode;
@@ -52,10 +53,19 @@ export default function CyberButton({
 
   const Component = href ? motion.a : motion.button;
 
+  const handleClick = (e: React.MouseEvent<HTMLAnchorElement | HTMLButtonElement>) => {
+    if (href && href.startsWith('#')) {
+      handleAnchorClick(e as React.MouseEvent<HTMLAnchorElement>, href);
+    }
+    if (onClick) {
+      onClick();
+    }
+  };
+
   return (
     <Component
       href={href}
-      onClick={onClick}
+      onClick={handleClick}
       type={href ? undefined : type}
       disabled={disabled}
       whileHover={{ scale: disabled ? 1 : 1.02 }}

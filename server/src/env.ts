@@ -7,6 +7,10 @@ const envSchema = z.object({
   PORT: z.coerce.number().int().positive().default(3001),
   COOKIE_SECURE: z.coerce.boolean().default(false),
   SESSION_TTL_DAYS: z.coerce.number().int().positive().default(7),
+  SMTP_HOST: z.string().optional(),
+  SMTP_PORT: z.string().optional(),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASS: z.string().optional(),
 });
 
 export const env = envSchema.parse(process.env);
