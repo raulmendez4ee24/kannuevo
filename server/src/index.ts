@@ -52,7 +52,7 @@ app.use((req, res, next) => {
             action: `${req.method} ${req.path}`,
             resource: 'api',
             resourceId: null,
-            ip: req.ip,
+            ip: req.ip ?? 'unknown',
             userAgent: req.headers['user-agent'] ?? 'unknown',
             severity: res.statusCode >= 400 ? 'medium' : 'low',
             details: { statusCode: res.statusCode },
@@ -295,13 +295,13 @@ app.get('/api/client/overview', requireAuth, requirePermission('dashboard:view')
   ]);
 
   const systemStatus =
-    workflows.some((w) => w.healthStatus === 'error') || integrations.some((i) => i.healthStatus === 'error')
+    workflows.some((w: typeof workflows[number]) => w.healthStatus === 'error') || integrations.some((i: typeof integrations[number]) => i.healthStatus === 'error')
       ? 'error'
-      : workflows.some((w) => w.healthStatus === 'warning') || integrations.some((i) => i.healthStatus === 'warning')
+      : workflows.some((w: typeof workflows[number]) => w.healthStatus === 'warning') || integrations.some((i: typeof integrations[number]) => i.healthStatus === 'warning')
         ? 'warning'
         : 'healthy';
 
-  const conversations = workflows.find((w) => (w.config as any)?.trigger === 'webhook:whatsapp')?.runCount ?? 0;
+  const conversations = workflows.find((w: typeof workflows[number]) => (w.config as any)?.trigger === 'webhook:whatsapp')?.runCount ?? 0;
   const leads = Math.round(conversations * 0.12);
   const appointments = Math.round(leads * 0.57);
   const roi = 3.2;
@@ -313,10 +313,10 @@ app.get('/api/client/overview', requireAuth, requirePermission('dashboard:view')
       appointments: { value: appointments, change: -3, trend: 'down' },
       roi: { value: roi, change: 0.4, trend: 'up' },
       timeSaved: { value: 42, unit: 'horas' },
-      automationsActive: workflows.filter((w) => w.status === 'active').length,
+      automationsActive: workflows.filter((w: typeof workflows[number]) => w.status === 'active').length,
     },
     systemStatus,
-    recentActivity: events.map((e) => ({
+    recentActivity: events.map((e: typeof events[number]) => ({
       id: e.id,
       type: e.type,
       title: e.title,
@@ -339,7 +339,7 @@ app.get('/api/client/activity', requireAuth, requirePermission('dashboard:view')
   });
 
   res.json({
-    events: events.map((e) => ({
+    events: events.map((e: typeof events[number]) => ({
       id: e.id,
       type: e.type,
       title: e.title,
@@ -355,7 +355,7 @@ app.get('/api/client/workflows', requireAuth, requirePermission('automation:view
   const auth = (req as AuthedRequest).auth;
   const workflows = await prisma.workflow.findMany({ where: { organizationId: auth.organizationId }, orderBy: { createdAt: 'asc' } });
   res.json({
-    workflows: workflows.map((w) => ({
+    workflows: workflows.map((w: typeof workflows[number]) => ({
       id: w.id,
       name: w.name,
       description: w.description,
@@ -420,12 +420,12 @@ app.get('/api/client/tasks', requireAuth, requirePermission('tasks:view'), async
   const auth = (req as AuthedRequest).auth;
   const tasks = await prisma.task.findMany({ where: { organizationId: auth.organizationId }, orderBy: { createdAt: 'asc' } });
   const runs = await prisma.taskRun.findMany({
-    where: { organizationId: auth.organizationId, taskId: { in: tasks.map((t) => t.id) } },
+    where: { organizationId: auth.organizationId, taskId: { in: tasks.map((t: typeof tasks[number]) => t.id) } },
     orderBy: { createdAt: 'desc' },
     take: 200,
   });
   const steps = await prisma.taskStep.findMany({
-    where: { organizationId: auth.organizationId, taskRunId: { in: runs.map((r) => r.id) } },
+    where: { organizationId: auth.organizationId, taskRunId: { in: runs.map((r: typeof runs[number]) => r.id) } },
     orderBy: { createdAt: 'asc' },
   });
 
@@ -441,7 +441,7 @@ app.get('/api/client/tasks', requireAuth, requirePermission('tasks:view'), async
   }
 
   res.json({
-    tasks: tasks.map((t) => {
+    tasks: tasks.map((t: typeof tasks[number]) => {
       const lastRun = lastRunByTask.get(t.id) ?? null;
       const lastRunSteps = lastRun ? stepsByRun.get(lastRun.id) ?? [] : [];
       const status = t.isPaused
@@ -467,7 +467,7 @@ app.get('/api/client/tasks', requireAuth, requirePermission('tasks:view'), async
               startedAt: (lastRun.startedAt ?? lastRun.createdAt).toISOString(),
               completedAt: lastRun.completedAt?.toISOString() ?? null,
               progress: lastRun.progress,
-              steps: lastRunSteps.map((s) => ({
+              steps: lastRunSteps.map((s: typeof steps[number]) => ({
                 id: s.id,
                 name: s.name,
                 status: s.status,
@@ -579,7 +579,7 @@ app.get('/api/client/task-runs', requireAuth, requirePermission('tasks:view'), a
     take: limit,
   });
   const steps = await prisma.taskStep.findMany({
-    where: { organizationId: auth.organizationId, taskRunId: { in: runs.map((r) => r.id) } },
+    where: { organizationId: auth.organizationId, taskRunId: { in: runs.map((r: typeof runs[number]) => r.id) } },
     orderBy: { createdAt: 'asc' },
   });
   const stepsByRun = new Map<string, typeof steps>();
@@ -590,14 +590,14 @@ app.get('/api/client/task-runs', requireAuth, requirePermission('tasks:view'), a
   }
 
   res.json({
-    taskRuns: runs.map((r) => ({
+    taskRuns: runs.map((r: typeof runs[number]) => ({
       id: r.id,
       taskId: r.taskId,
       status: r.status,
       startedAt: (r.startedAt ?? r.createdAt).toISOString(),
       completedAt: r.completedAt?.toISOString() ?? null,
       progress: r.progress,
-      steps: (stepsByRun.get(r.id) ?? []).map((s) => ({ id: s.id, name: s.name, status: s.status, progress: s.progress })),
+      steps: (stepsByRun.get(r.id) ?? []).map((s: typeof steps[number]) => ({ id: s.id, name: s.name, status: s.status, progress: s.progress })),
       evidence: (r.evidence as any) ?? undefined,
     })),
   });
@@ -653,7 +653,7 @@ async function startTaskRunSimulation(params: { orgId: string; runId: string; ta
       }
 
       if (i === c.step) {
-        const existingLogs = Array.isArray(step.logs) ? (step.logs as unknown[]) : [];
+        const existingLogs = Array.isArray(step.logs) ? (step.logs as string[]) : [];
         const nextLogs = [...existingLogs, `[${now.toISOString()}] ${c.message}`];
         await prisma.taskStep.update({
           where: { id: step.id },
@@ -662,7 +662,7 @@ async function startTaskRunSimulation(params: { orgId: string; runId: string; ta
             progress: c.stepProgress,
             startedAt: step.startedAt ?? now,
             completedAt: c.stepProgress >= 100 ? now : null,
-            logs: nextLogs,
+            logs: nextLogs as any,
           },
         });
 
@@ -853,7 +853,7 @@ app.get('/api/client/approvals', requireAuth, requirePermission('approvals:view'
     take: 100,
   });
   res.json({
-    approvals: approvals.map((a) => ({
+    approvals: approvals.map((a: typeof approvals[number]) => ({
       id: a.id,
       type: a.type,
       title: a.title,
@@ -871,7 +871,7 @@ app.get('/api/client/integrations', requireAuth, requirePermission('integrations
   const auth = (req as AuthedRequest).auth;
   const integrations = await prisma.integration.findMany({ where: { organizationId: auth.organizationId }, orderBy: { createdAt: 'asc' } });
   res.json({
-    integrations: integrations.map((i) => ({
+    integrations: integrations.map((i: typeof integrations[number]) => ({
       id: i.id,
       name: i.name,
       provider: i.provider,
@@ -982,7 +982,7 @@ app.get('/api/client/users', requireAuth, requirePermission('security:view'), as
     orderBy: { createdAt: 'asc' },
   });
   res.json({
-    users: memberships.map((m) => ({
+    users: memberships.map((m: typeof memberships[number]) => ({
       id: m.user.id,
       email: m.user.email,
       name: m.user.name,
@@ -1003,7 +1003,7 @@ app.get('/api/client/audit-logs', requireAuth, requirePermission('security:view'
     take: limit,
   });
   res.json({
-    logs: logs.map((l) => ({
+    logs: logs.map((l: typeof logs[number]) => ({
       id: l.id,
       organizationId: l.organizationId,
       userId: l.actorUserId,
@@ -1025,7 +1025,7 @@ app.get('/api/client/audit-logs', requireAuth, requirePermission('security:view'
 app.get('/api/admin/clients', requireAuth, requirePermission('admin:clients'), async (_req, res) => {
   const orgs = await prisma.organization.findMany({ orderBy: { createdAt: 'asc' } });
   res.json({
-    clients: orgs.map((o) => ({ id: o.id, name: o.name, plan: o.plan, status: o.status, createdAt: o.createdAt.toISOString() })),
+    clients: orgs.map((o: typeof orgs[number]) => ({ id: o.id, name: o.name, plan: o.plan, status: o.status, createdAt: o.createdAt.toISOString() })),
   });
 });
 
@@ -1044,7 +1044,7 @@ app.get('/api/admin/users', requireAuth, requirePermission('admin:impersonate'),
     take: 25,
   });
   const memberships = await prisma.membership.findMany({
-    where: { userId: { in: users.map((u) => u.id) }, ...(orgId ? { organizationId: orgId } : {}) },
+    where: { userId: { in: users.map((u: typeof users[number]) => u.id) }, ...(orgId ? { organizationId: orgId } : {}) },
   });
   const membershipsByUser = new Map<string, typeof memberships>();
   for (const m of memberships) {
@@ -1053,12 +1053,12 @@ app.get('/api/admin/users', requireAuth, requirePermission('admin:impersonate'),
     membershipsByUser.set(m.userId, existing);
   }
   res.json({
-    users: users.map((u) => ({
+    users: users.map((u: typeof users[number]) => ({
       id: u.id,
       email: u.email,
       name: u.name,
       systemRole: u.systemRole,
-      memberships: (membershipsByUser.get(u.id) ?? []).map((m) => ({ organizationId: m.organizationId, role: m.role })),
+      memberships: (membershipsByUser.get(u.id) ?? []).map((m: typeof memberships[number]) => ({ organizationId: m.organizationId, role: m.role })),
     })),
   });
 });
@@ -1076,7 +1076,7 @@ app.get('/api/admin/metrics', requireAuth, requirePermission('admin:metrics'), a
 app.get('/api/admin/logs', requireAuth, requirePermission('admin:logs'), async (_req, res) => {
   const logs = await prisma.auditLog.findMany({ include: { actor: true }, orderBy: { createdAt: 'desc' }, take: 200 });
   res.json({
-    logs: logs.map((l) => ({
+    logs: logs.map((l: typeof logs[number]) => ({
       id: l.id,
       organizationId: l.organizationId,
       userId: l.actorUserId,
@@ -1119,7 +1119,7 @@ app.post('/api/admin/impersonate', requireAuth, requirePermission('admin:imperso
   const orgId = body.organizationId ?? targetMemberships[0]?.organizationId ?? null;
   if (!orgId) return res.status(400).json({ error: 'NO_ORG' });
 
-  const membership = targetMemberships.find((m) => m.organizationId === orgId) ?? null;
+  const membership = targetMemberships.find((m: typeof targetMemberships[number]) => m.organizationId === orgId) ?? null;
   if (!membership && targetUser.systemRole !== 'SUPER_ADMIN') {
     return res.status(400).json({ error: 'NO_ORG_ACCESS' });
   }

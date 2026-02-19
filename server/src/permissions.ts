@@ -1,4 +1,5 @@
-import type { OrgRole, SystemRole } from '@prisma/client';
+export type SystemRole = 'NONE' | 'SUPER_ADMIN';
+export type OrgRole = 'ORG_ADMIN' | 'ORG_USER';
 
 export type Permission =
   | '*'
