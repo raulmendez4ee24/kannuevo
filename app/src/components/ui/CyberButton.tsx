@@ -10,6 +10,7 @@ interface CyberButtonProps {
   className?: string;
   size?: 'sm' | 'md' | 'lg';
   variant?: 'primary' | 'secondary';
+  type?: 'button' | 'submit';
 }
 
 export default function CyberButton({
@@ -20,6 +21,7 @@ export default function CyberButton({
   className = '',
   size = 'md',
   variant = 'primary',
+  type = 'button',
 }: CyberButtonProps) {
   const sizeClasses =
     size === 'sm'
@@ -54,7 +56,7 @@ export default function CyberButton({
   }
 
   return (
-    <button type="button" onClick={onClick} className={baseClass}>
+    <button type={type} onClick={onClick} className={baseClass}>
       {icon}
       {children}
     </button>

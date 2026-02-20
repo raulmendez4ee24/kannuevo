@@ -1,6 +1,5 @@
 import { Cpu, Github, Linkedin, Twitter, Instagram } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { handleAnchorClick } from '../utils/scroll';
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
@@ -37,11 +36,7 @@ export default function Footer() {
       <div className="max-w-[1400px] mx-auto px-6 lg:px-12">
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8 mb-12">
           <div className="col-span-2 md:col-span-4 lg:col-span-2">
-            <a
-              href="#hero"
-              onClick={(e) => handleAnchorClick(e, '#hero')}
-              className="flex items-center gap-3 mb-4 group"
-            >
+            <a href="#hero" className="flex items-center gap-3 mb-4 group">
               <div className="relative w-10 h-10">
                 <div className="absolute inset-0 border-2 border-cyber-cyan rounded-lg group-hover:shadow-cyber-glow transition-shadow duration-300" />
                 <div className="absolute inset-2 bg-cyber-cyan/20 rounded group-hover:bg-cyber-cyan/30 transition-colors" />
@@ -84,7 +79,6 @@ export default function Footer() {
                 <li key={link.label}>
                   <a
                     href={link.href}
-                    onClick={(e) => handleAnchorClick(e, link.href)}
                     className="text-sm text-ghost-white hover:text-cyber-cyan transition-colors"
                   >
                     {link.label}
@@ -101,19 +95,12 @@ export default function Footer() {
             <ul className="space-y-2">
               {footerLinks.empresa.map((link) => (
                 <li key={link.label}>
-                  {link.href.startsWith('#') ? (
-                    <a
-                      href={link.href}
-                      onClick={(e) => handleAnchorClick(e, link.href)}
-                      className="text-sm text-ghost-white hover:text-cyber-cyan transition-colors"
-                    >
-                      {link.label}
-                    </a>
-                  ) : (
-                    <Link to={link.href} className="text-sm text-ghost-white hover:text-cyber-cyan transition-colors">
-                      {link.label}
-                    </Link>
-                  )}
+                  <a
+                    href={link.href}
+                    className="text-sm text-ghost-white hover:text-cyber-cyan transition-colors"
+                  >
+                    {link.label}
+                  </a>
                 </li>
               ))}
             </ul>
