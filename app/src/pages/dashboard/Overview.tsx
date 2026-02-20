@@ -18,8 +18,12 @@ import {
   Activity,
   Workflow,
   Terminal,
-  Plug
+  Plug,
+  CreditCard,
+  Cpu
 } from 'lucide-react';
+import SecureCheckout from '../../components/ui/SecureCheckout';
+import { PENDING_CHECKOUT_KEY, PLANS } from '../../constants/plans';
 import type { DashboardOverview as DashboardData } from '../../lib/api';
 
 type ColorKey = 'cyan' | 'purple' | 'green' | 'amber';
@@ -108,12 +112,30 @@ export default function Overview() {
   const { user } = useAuth();
   const [data, setData] = useState<DashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<{ id: string; name: string; price: string } | null>(null);
+  const openCheckout = (plan: { id: string; name: string; monthly: string }) => {
+    setSelectedPlan({ id: plan.id, name: plan.name, price: plan.monthly });
+    setIsCheckoutOpen(true);
+  };
 
   useEffect(() => {
     api.getDashboardOverview().then(data => {
       setData(data);
       setIsLoading(false);
     });
+  }, []);
+
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem(PENDING_CHECKOUT_KEY);
+      if (raw) {
+        const p = JSON.parse(raw) as { id: string; name: string; price: string };
+        setSelectedPlan(p);
+        setIsCheckoutOpen(true);
+        sessionStorage.removeItem(PENDING_CHECKOUT_KEY);
+      }
+    } catch (_) {}
   }, []);
 
   if (isLoading) {
@@ -281,6 +303,60 @@ export default function Overview() {
           </div>
         </div>
       </div>
+
+      {/* Planes y pagos */}
+      <div className="mt-8 bg-steel-gray/30 border border-terminal-gray/50 rounded-xl p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <CreditCard className="w-5 h-5 text-cyber-cyan" />
+          <h2 className="font-display text-lg text-frost-white">Planes y Pagos</h2>
+        </div>
+        <p className="text-sm text-ghost-white mb-4">
+          Inicias sesión, eliges plan y registras pago. El servicio se activa tras confirmación.
+        </p>
+        <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-3">
+          {PLANS.map((plan) => (
+            <div key={plan.id} className={`rounded-lg border p-4 ${'popular' in plan && plan.popular ? 'border-cyber-cyan bg-cyber-cyan/5' : 'border-terminal-gray/50 bg-void-black/30'}`}>
+              <p className="font-display text-frost-white">{plan.name}</p>
+              <p className="font-mono text-cyber-cyan text-sm mt-1">{plan.monthly}</p>
+              <button
+                onClick={() => openCheckout(plan)}
+                className="mt-3 w-full px-3 py-2 text-xs font-mono rounded-lg border border-cyber-cyan text-cyber-cyan hover:bg-cyber-cyan/15 transition-colors"
+              >
+                CONTRATAR
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Qué puedes hacer aquí */}
+      <div className="mt-6 bg-steel-gray/20 border border-terminal-gray/40 rounded-xl p-5">
+        <div className="flex items-center gap-2 mb-3">
+          <Cpu className="w-5 h-5 text-neon-purple" />
+          <h3 className="font-display text-frost-white">Qué puedes hacer en el dashboard</h3>
+        </div>
+        <div className="grid md:grid-cols-2 gap-2 text-sm text-ghost-white">
+          <p>• Crear y pausar automatizaciones</p>
+          <p>• Lanzar misiones operativas</p>
+          <p>• Conectar Meta, Google, Shopify y más</p>
+          <p>• Monitorear estado y errores en tiempo real</p>
+          <p>• Ver métricas de conversaciones, leads y ROI</p>
+          <p>• Gestionar seguridad y accesos</p>
+        </div>
+      </div>
+
+      {selectedPlan && (
+        <SecureCheckout
+          isOpen={isCheckoutOpen}
+          onClose={() => {
+            setIsCheckoutOpen(false);
+            setSelectedPlan(null);
+          }}
+          planId={selectedPlan.id}
+          planName={selectedPlan.name}
+          planPrice={selectedPlan.price}
+        />
+      )}
     </div>
   );
 }

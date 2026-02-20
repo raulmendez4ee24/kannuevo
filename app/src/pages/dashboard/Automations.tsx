@@ -160,6 +160,7 @@ export default function Automations() {
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'active' | 'paused' | 'error'>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [banner, setBanner] = useState<string | null>(null);
 
   useEffect(() => {
     loadAutomations();
@@ -200,6 +201,26 @@ export default function Automations() {
     error: automations.filter(a => a.status === 'error').length,
   };
 
+  const handleNewAutomation = () => {
+    setBanner('Se creó un borrador de automatización. Completa los pasos desde "Misiones" para activarlo.');
+    const draft: Automation = {
+      id: `draft_${Date.now()}`,
+      name: 'Borrador: Nueva Automatización',
+      description: 'Borrador creado desde el panel para configuración inicial.',
+      status: 'paused',
+      healthStatus: 'warning',
+      runCount: 0,
+      successRate: 0,
+      lastRun: null,
+      nextRun: null,
+      config: {
+        trigger: 'schedule:daily',
+        actions: [],
+      },
+    };
+    setAutomations((prev) => [draft, ...prev]);
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -216,11 +237,20 @@ export default function Automations() {
           <h1 className="font-display text-3xl font-bold text-frost-white mb-2">Automatizaciones</h1>
           <p className="text-ghost-white">Gestiona tus flujos de trabajo automatizados</p>
         </div>
-        <button className="flex items-center gap-2 px-4 py-2 bg-cyber-cyan/10 border border-cyber-cyan text-cyber-cyan rounded-lg hover:bg-cyber-cyan/20 transition-colors">
+        <button
+          onClick={handleNewAutomation}
+          className="flex items-center gap-2 px-4 py-2 bg-cyber-cyan/10 border border-cyber-cyan text-cyber-cyan rounded-lg hover:bg-cyber-cyan/20 transition-colors"
+        >
           <Plus className="w-4 h-4" />
           <span>Nueva Automatización</span>
         </button>
       </div>
+
+      {banner ? (
+        <div className="mb-6 p-3 rounded-lg border border-cyber-cyan/40 bg-cyber-cyan/10 text-cyber-cyan text-sm">
+          {banner}
+        </div>
+      ) : null}
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">

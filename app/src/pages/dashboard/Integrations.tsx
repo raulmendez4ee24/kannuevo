@@ -179,6 +179,7 @@ function IntegrationCard({
           </>
         ) : (
           <button
+            onClick={() => alert('Para conectar una integración primero registra credenciales y configuración en tu backend.')}
             className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-matrix-green/10 border border-matrix-green/30 text-matrix-green rounded-lg hover:bg-matrix-green/20 transition-colors"
           >
             <Plug className="w-4 h-4" />
@@ -290,6 +291,7 @@ export default function Integrations() {
   const [filter, setFilter] = useState<'all' | 'connected' | 'disconnected' | 'error'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [testingId, setTestingId] = useState<string | null>(null);
+  const [banner, setBanner] = useState<string | null>(null);
 
   useEffect(() => {
     loadIntegrations();
@@ -337,6 +339,24 @@ export default function Integrations() {
     error: integrations.filter(i => i.status === 'error').length,
   };
 
+  const handleNewIntegration = () => {
+    setBanner('Se agregó una integración en borrador. Completa credenciales para conectarla.');
+    const draft: Integration = {
+      id: `draft_${Date.now()}`,
+      name: 'Borrador: Nueva Integración',
+      provider: 'Meta',
+      status: 'disconnected',
+      healthStatus: 'warning',
+      lastSync: null,
+      estimatedCost: undefined,
+      credentials: { hasCredentials: false },
+      config: {
+        features: ['draft'],
+      },
+    };
+    setIntegrations((prev) => [draft, ...prev]);
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -353,11 +373,20 @@ export default function Integrations() {
           <h1 className="font-display text-3xl font-bold text-frost-white mb-2">Integraciones</h1>
           <p className="text-ghost-white">Conecta tus herramientas favoritas</p>
         </div>
-        <button className="flex items-center gap-2 px-4 py-2 bg-matrix-green/10 border border-matrix-green text-matrix-green rounded-lg hover:bg-matrix-green/20 transition-colors">
+        <button
+          onClick={handleNewIntegration}
+          className="flex items-center gap-2 px-4 py-2 bg-matrix-green/10 border border-matrix-green text-matrix-green rounded-lg hover:bg-matrix-green/20 transition-colors"
+        >
           <Plus className="w-4 h-4" />
           <span>Nueva Integración</span>
         </button>
       </div>
+
+      {banner ? (
+        <div className="mb-6 p-3 rounded-lg border border-matrix-green/40 bg-matrix-green/10 text-matrix-green text-sm">
+          {banner}
+        </div>
+      ) : null}
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
