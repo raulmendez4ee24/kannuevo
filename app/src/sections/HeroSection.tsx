@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import InteractiveSphere from '../components/three/InteractiveSphere';
 import CyberButton from '../components/ui/CyberButton';
-import { Zap, Play, ChevronRight, Bot, Clock, TrendingUp } from 'lucide-react';
+import { Zap, Play, ChevronRight, Bot, Clock, TrendingUp, MessageSquare, Calendar, FileText, Shield, Cpu, Eye, Users, Globe } from 'lucide-react';
 
 export default function HeroSection() {
   const [typedText, setTypedText] = useState('');
@@ -102,12 +102,21 @@ export default function HeroSection() {
               Chat + automatización + agente que usa web/PC, con panel, auditoría y seguridad.
             </motion.p>
 
-            {/* Feature pills */}
+            {/* Feature pills - qué hace el agente */}
             <motion.div variants={itemVariants} className="flex flex-wrap gap-3 mb-8">
               {[
                 { icon: Bot, text: 'Agente Autónomo' },
                 { icon: Clock, text: '24/7 Sin Pausas' },
                 { icon: TrendingUp, text: 'ROI 3-8x' },
+                { icon: MessageSquare, text: 'WhatsApp 24/7' },
+                { icon: Calendar, text: 'Agenda Automática' },
+                { icon: Globe, text: 'Navegación Web' },
+                { icon: FileText, text: 'Reportes Automáticos' },
+                { icon: Zap, text: 'Misiones Completas' },
+                { icon: Shield, text: 'Reglas y Auditoría' },
+                { icon: Cpu, text: 'Operación sin API' },
+                { icon: Eye, text: 'Detección Visual' },
+                { icon: Users, text: 'CRM Automático' },
               ].map((item, index) => (
                 <span 
                   key={index}

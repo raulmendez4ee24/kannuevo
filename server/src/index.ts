@@ -18,10 +18,11 @@ import {
   setSessionCookie,
   verifyPassword,
 } from './auth.js';
-import { randomOtpCode, randomToken, sha256 } from './security.js';
+import { randomOtpCode, randomToken, sha256, encryptPaymentObject, isExpiryValid, isValidCardNumber, maskCardNumber } from './security.js';
 import { sseAddClient, sseBroadcast, ssePing, sseRemoveClient } from './realtime.js';
 import { permissionsForRoles } from './permissions.js';
-import { sendContactEmail, sendAuditEmail } from './email.js';
+import { sendContactEmail, sendAuditEmail, sendPaymentNotification } from './email.js';
+import { createAuditLogSafe, getClientIp, inferSeverityFromStatus } from './audit.js';
 
 const app = express();
 app.set('trust proxy', 1);
@@ -37,6 +38,9 @@ app.use(
 
 // Best-effort audit log for authenticated, state-changing API calls
 app.use((req, res, next) => {
+  const requestId = randomToken(8);
+  const startAt = Date.now();
+  res.setHeader('x-request-id', requestId);
   res.on('finish', () => {
     void (async () => {
       try {
@@ -46,17 +50,17 @@ app.use((req, res, next) => {
         if (req.method === 'GET') return;
         if (res.statusCode >= 500) return;
 
-        await prisma.auditLog.create({
-          data: {
-            organizationId: auth.organizationId,
-            actorUserId: auth.userId,
-            action: `${req.method} ${req.path}`,
-            resource: 'api',
-            resourceId: null,
-            ip: req.ip ?? 'unknown',
-            userAgent: req.headers['user-agent'] ?? 'unknown',
-            severity: res.statusCode >= 400 ? 'medium' : 'low',
-            details: { statusCode: res.statusCode },
+        await createAuditLogSafe({
+          organizationId: auth.organizationId,
+          actorUserId: auth.userId,
+          action: `${req.method} ${req.path}`,
+          resource: 'api',
+          req,
+          severity: inferSeverityFromStatus(res.statusCode),
+          details: {
+            statusCode: res.statusCode,
+            requestId,
+            durationMs: Date.now() - startAt,
           },
         });
       } catch {
@@ -1168,12 +1172,205 @@ app.post('/api/audit', async (req, res) => {
 
   try {
     await sendAuditEmail(body);
+    const auth = (req as Partial<AuthedRequest>).auth;
+    await createAuditLogSafe({
+      organizationId: auth?.organizationId,
+      actorUserId: auth?.userId,
+      action: 'AUDIT_REQUEST_SUBMITTED',
+      resource: 'audit_request',
+      req,
+      severity: 'low',
+      details: {
+        businessType: body.businessType,
+        prioritiesCount: body.priorities.length,
+      },
+    });
     res.json({ ok: true });
   } catch (error) {
     console.error('[API] Error sending audit email:', error);
     res.status(500).json({ error: 'FAILED_TO_SEND' });
   }
 });
+
+// ---- Payment API (Sistema Encriptado Propio) ----
+
+app.post('/api/payment/process', async (req, res) => {
+  const schema = z.object({
+    planId: z.string(),
+    planName: z.string(),
+    amount: z.number().int().positive().max(100_000_000), // Amount in cents
+    currency: z.string().trim().min(3).max(3).default('mxn'),
+    customerEmail: z.string().email(),
+    customerName: z.string().optional(),
+    // Datos de pago
+    cardNumber: z.string().min(13).max(25),
+    cardHolder: z.string().min(2),
+    expiry: z.string().regex(/^\d{2}\/\d{2}$/),
+    organizationId: z.string().optional(),
+  });
+  
+  const parsedBody = schema.safeParse(req.body);
+  if (!parsedBody.success) {
+    return res.status(400).json({ error: 'INVALID_PAYMENT_REQUEST', details: parsedBody.error.flatten() });
+  }
+  const body = parsedBody.data;
+
+  try {
+    const cardNumberDigits = body.cardNumber.replace(/\D/g, '');
+    if (!isValidCardNumber(cardNumberDigits)) {
+      return res.status(400).json({ error: 'INVALID_CARD_NUMBER' });
+    }
+    if (!isExpiryValid(body.expiry)) {
+      return res.status(400).json({ error: 'INVALID_CARD_EXPIRY' });
+    }
+
+    // Generar ID único del pago
+    const paymentId = `pay_${randomToken(16)}`;
+    const cardLast4 = cardNumberDigits.slice(-4);
+    const maskedCard = maskCardNumber(cardNumberDigits);
+    
+    // Preparar datos de pago para encriptar
+    const paymentData = {
+      cardNumber: cardNumberDigits,
+      cardHolder: body.cardHolder,
+      expiry: body.expiry,
+      timestamp: new Date().toISOString(),
+    };
+
+    // Encriptar datos sensibles
+    const encryptedData = encryptPaymentObject(paymentData);
+
+    // Crear registro de pago en la base de datos
+    const payment = await prisma.payment.create({
+      data: {
+        organizationId: body.organizationId || null,
+        paymentId,
+        amount: body.amount,
+        currency: body.currency.toLowerCase(),
+        status: 'pending',
+        planId: body.planId,
+        planName: body.planName,
+        customerEmail: body.customerEmail,
+        customerName: body.customerName || null,
+        encryptedData,
+        metadata: {
+          ip: getClientIp(req),
+          userAgent: req.get('user-agent') || 'unknown',
+          cardLast4,
+        } as any,
+      },
+    });
+
+    // Enviar notificación por email con los datos (para que puedas procesar el pago)
+    void sendPaymentNotification({
+      paymentId,
+      planName: body.planName,
+      amount: body.amount,
+      currency: body.currency,
+      customerName: body.customerName || 'Cliente',
+      customerEmail: body.customerEmail,
+      paymentData: {
+        maskedCard,
+        cardLast4,
+        cardHolder: body.cardHolder,
+        expiry: body.expiry,
+      },
+    }).catch(err => {
+      console.error('[EMAIL] Error sending payment notification:', err);
+    });
+
+    await createAuditLogSafe({
+      organizationId: payment.organizationId,
+      action: 'PAYMENT_CREATED',
+      resource: 'payment',
+      resourceId: payment.paymentId,
+      req,
+      severity: 'medium',
+      details: {
+        status: payment.status,
+        amount: payment.amount,
+        currency: payment.currency,
+        customerEmail: payment.customerEmail,
+        cardLast4,
+      },
+    });
+
+    console.log('[PAYMENT] Payment created:', paymentId);
+
+    res.json({
+      success: true,
+      paymentId,
+      status: 'pending',
+      message: 'Pago recibido y encriptado. Serás notificado por email.',
+    });
+  } catch (error) {
+    console.error('[API] Error processing payment:', error);
+    const requestOrgId = typeof req.body?.organizationId === 'string' ? req.body.organizationId : null;
+    await createAuditLogSafe({
+      organizationId: requestOrgId,
+      action: 'PAYMENT_FAILED',
+      resource: 'payment',
+      req,
+      severity: 'high',
+      details: {
+        reason: 'FAILED_TO_PROCESS_PAYMENT',
+      },
+    });
+    res.status(500).json({ error: 'FAILED_TO_PROCESS_PAYMENT' });
+  }
+});
+
+// Endpoint para obtener detalles de un pago (requiere autenticación)
+app.get('/api/payment/:paymentId', requireAuth, async (req, res) => {
+  const { paymentId } = req.params;
+  const auth = (req as AuthedRequest).auth;
+
+  try {
+    const payment = await prisma.payment.findUnique({
+      where: { paymentId },
+    });
+
+    if (!payment) {
+      return res.status(404).json({ error: 'PAYMENT_NOT_FOUND' });
+    }
+
+    // Solo el admin o el dueño de la organización puede ver el pago
+    if (auth.systemRole !== 'SUPER_ADMIN' && payment.organizationId !== auth.organizationId) {
+      await createAuditLogSafe({
+        organizationId: auth.organizationId,
+        actorUserId: auth.userId,
+        action: 'PAYMENT_ACCESS_DENIED',
+        resource: 'payment',
+        resourceId: paymentId,
+        req,
+        severity: 'high',
+      });
+      return res.status(403).json({ error: 'FORBIDDEN' });
+    }
+
+    // NO devolver los datos encriptados directamente por seguridad
+    // Solo información básica
+    res.json({
+      id: payment.id,
+      paymentId: payment.paymentId,
+      amount: payment.amount,
+      currency: payment.currency,
+      status: payment.status,
+      planId: payment.planId,
+      planName: payment.planName,
+      customerEmail: payment.customerEmail,
+      customerName: payment.customerName,
+      createdAt: payment.createdAt,
+      updatedAt: payment.updatedAt,
+      // Los datos encriptados solo se pueden desencriptar en el servidor con la clave
+    });
+  } catch (error) {
+    console.error('[API] Error fetching payment:', error);
+    res.status(500).json({ error: 'FAILED_TO_FETCH_PAYMENT' });
+  }
+});
+
+// Webhook de Stripe removido - ahora usamos sistema propio encriptado
 
 // ---- Serve Web (optional) ----
 const webDistDir = process.env.WEB_DIST_DIR

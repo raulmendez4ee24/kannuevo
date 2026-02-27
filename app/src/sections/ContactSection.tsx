@@ -58,7 +58,7 @@ export default function ContactSection() {
     {
       icon: MapPin,
       label: 'UBICACIÓN',
-      value: 'Ciudad de México, MX',
+      value: 'Zapopan, Jal',
       href: '#',
     },
   ];

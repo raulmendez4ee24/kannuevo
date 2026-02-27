@@ -6,14 +6,13 @@ import CyberCard from '../components/ui/CyberCard';
 import CyberButton from '../components/ui/CyberButton';
 import SecureCheckout from '../components/ui/SecureCheckout';
 import { useAuth } from '../contexts/AuthContext';
-import { PENDING_CHECKOUT_KEY } from '../constants/plans';
-import {
-  Bot,
-  MessageSquare,
-  Calendar,
-  TrendingUp,
-  Calculator,
-  Users,
+import { 
+  Bot, 
+  MessageSquare, 
+  Calendar, 
+  TrendingUp, 
+  Calculator, 
+  Users, 
   RotateCcw,
   FileText,
   Package,
@@ -107,8 +106,8 @@ const products: Product[] = [
       '3 automatizaciones',
       'Panel básico de resultados',
     ],
-    setup: '$2,000 – $8,000',
-    monthly: '$1,500 – $4,500',
+    setup: '',
+    monthly: '$600',
   },
   {
     id: 'growth',
@@ -121,8 +120,8 @@ const products: Product[] = [
       '2–5 integraciones',
       'Reporte semanal + monitoreo',
     ],
-    setup: '$15,000 – $60,000',
-    monthly: '$6,000 – $25,000',
+    setup: '',
+    monthly: '$3,000',
     popular: true,
   },
   {
@@ -136,8 +135,8 @@ const products: Product[] = [
       'Reportes de ventas',
       'Integración Shopify/plataforma',
     ],
-    setup: '$30,000 – $150,000',
-    monthly: '$15,000 – $60,000',
+    setup: '',
+    monthly: '$10,000',
   },
   {
     id: 'enterprise',
@@ -150,8 +149,8 @@ const products: Product[] = [
       'RBAC, auditoría, políticas',
       'SLA + monitoreo + auto-repair',
     ],
-    setup: '$150,000+',
-    monthly: '$50,000 – $300,000+',
+    setup: '',
+    monthly: '$50,000',
   },
 ];
 
@@ -182,17 +181,21 @@ function FeatureCard({ feature, index }: { feature: Feature; index: number }) {
   );
 }
 
+import { PENDING_CHECKOUT_KEY } from '../constants/plans';
+
 export default function DigitalWorkforceSection() {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: '-100px' });
-  const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<{ id: string; name: string; price: string } | null>(null);
 
   const openCheckout = (plan: Product) => {
     if (!isAuthenticated) {
-      sessionStorage.setItem(PENDING_CHECKOUT_KEY, JSON.stringify({ id: plan.id, name: plan.name, price: plan.monthly }));
+      try {
+        sessionStorage.setItem(PENDING_CHECKOUT_KEY, JSON.stringify({ id: plan.id, name: plan.name, price: plan.monthly }));
+      } catch (_) {}
       navigate('/login?returnUrl=/dashboard');
       return;
     }
@@ -222,7 +225,7 @@ export default function DigitalWorkforceSection() {
             Empleados que <span className="text-gradient">nunca duermen</span>
           </h2>
           <p className="text-ghost-white text-lg max-w-3xl mx-auto">
-            Un sistema de empleados digitales que atienden, venden y operan procesos 24/7.
+            Un sistema de empleados digitales que atienden, venden y operan procesos 24/7. 
             Chat + automatización + agente que usa web/PC, con panel, auditoría y seguridad.
           </p>
         </motion.div>
@@ -409,7 +412,7 @@ export default function DigitalWorkforceSection() {
                   <h4 className="font-display text-xl font-bold text-frost-white mb-1">{product.name}</h4>
                   <p className="font-mono text-xs text-cyber-cyan mb-2">{product.subtitle}</p>
                   <p className="text-sm text-ghost-white mb-4">{product.description}</p>
-
+                  
                   <ul className="space-y-2 mb-6">
                     {product.features.map((feat, i) => (
                       <li key={i} className="flex items-start gap-2 text-sm text-ghost-white">
@@ -419,13 +422,9 @@ export default function DigitalWorkforceSection() {
                     ))}
                   </ul>
 
-                  <div className="mb-4">
-                    <p className="font-mono text-[10px] text-ghost-white">SETUP</p>
-                    <p className="font-mono text-lg text-frost-white font-bold">{product.setup}</p>
-                  </div>
                   <div className="mb-6">
-                    <p className="font-mono text-[10px] text-ghost-white">MENSUAL</p>
-                    <p className="font-mono text-2xl text-cyber-cyan font-bold">{product.monthly}</p>
+                    <p className="font-mono text-[10px] text-ghost-white mb-1">DESDE</p>
+                    <p className="font-mono text-2xl text-cyber-cyan font-bold">{product.monthly}<span className="text-sm text-ghost-white font-normal">/mes</span></p>
                   </div>
 
                   <CyberButton
@@ -455,7 +454,7 @@ export default function DigitalWorkforceSection() {
               <span className="font-mono text-xs text-cyber-cyan tracking-widest">DEMO QUE ROMPE CABEZAS</span>
             </div>
             <p className="text-ghost-white text-lg mb-4">
-              Cliente escribe por WhatsApp → Bot califica y agenda → Se crea lead en CRM →
+              Cliente escribe por WhatsApp → Bot califica y agenda → Se crea lead en CRM → 
               Se genera reporte/tarea → En panel se ve <span className="text-matrix-green font-bold">"Hecho ✅"</span>
             </p>
             <p className="text-frost-white font-semibold">
@@ -465,6 +464,7 @@ export default function DigitalWorkforceSection() {
         </motion.div>
       </div>
 
+      {/* Secure Checkout Modal */}
       {selectedPlan && (
         <SecureCheckout
           isOpen={isCheckoutOpen}

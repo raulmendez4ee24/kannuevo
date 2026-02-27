@@ -112,6 +112,7 @@ model Organization {
   auditLogs   AuditLog[]
   integrations Integration[]
   sessions    Session[]
+  payments    Payment[]
 
   @@index([createdAt])
 }
@@ -364,4 +365,35 @@ model OtpCode {
   user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([email, expiresAt])
+}
+
+model Payment {
+  id                String   @id @default(cuid())
+  organizationId    String?
+  paymentId         String   @unique // ID único del pago
+  amount            Int      // Amount in cents
+  currency          String   @default("mxn")
+  status            String   @default("pending") // pending, processing, completed, failed, canceled
+  planId            String
+  planName          String
+  customerEmail     String
+  customerName      String?
+  // Datos de pago encriptados (tarjeta, etc.)
+  encryptedData     String   // JSON encriptado con datos de pago
+  // Metadatos adicionales (no sensibles)
+  metadata          Json?
+  // Información de procesamiento
+  processedAt       DateTime?
+  processedBy       String?  // ID del usuario que procesó el pago
+  notes             String?  // Notas del procesamiento
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId])
+  @@index([paymentId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([customerEmail])
 }

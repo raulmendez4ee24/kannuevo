@@ -1,5 +1,5 @@
 import { Cpu, Github, Linkedin, Twitter, Instagram } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { handleAnchorClick } from '../utils/scroll';
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
@@ -16,9 +16,9 @@ export default function Footer() {
       { label: 'Contacto', href: '#contact' },
     ],
     legal: [
-      { label: 'Privacidad', href: '/privacy' },
-      { label: 'Terminos', href: '/terms' },
-      { label: 'Eliminacion de datos', href: '/data-deletion' },
+      { label: 'Privacidad', href: '#' },
+      { label: 'Terminos', href: '#' },
+      { label: 'Eliminacion de datos', href: '#' },
     ],
   };
 
@@ -36,7 +36,7 @@ export default function Footer() {
       <div className="max-w-[1400px] mx-auto px-6 lg:px-12">
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8 mb-12">
           <div className="col-span-2 md:col-span-4 lg:col-span-2">
-            <a href="#hero" className="flex items-center gap-3 mb-4 group">
+            <a href="#hero" onClick={(e) => handleAnchorClick(e, '#hero')} className="flex items-center gap-3 mb-4 group">
               <div className="relative w-10 h-10">
                 <div className="absolute inset-0 border-2 border-cyber-cyan rounded-lg group-hover:shadow-cyber-glow transition-shadow duration-300" />
                 <div className="absolute inset-2 bg-cyber-cyan/20 rounded group-hover:bg-cyber-cyan/30 transition-colors" />
@@ -61,6 +61,9 @@ export default function Footer() {
                 <a
                   key={social.label}
                   href={social.href}
+                  onClick={(e) => {
+                    if (social.href === '#') e.preventDefault();
+                  }}
                   aria-label={social.label}
                   className="w-9 h-9 bg-steel-gray/50 border border-terminal-gray/50 rounded-lg flex items-center justify-center text-ghost-white hover:text-cyber-cyan hover:border-cyber-cyan/50 hover:bg-cyber-cyan/10 transition-all"
                 >
@@ -79,6 +82,7 @@ export default function Footer() {
                 <li key={link.label}>
                   <a
                     href={link.href}
+                    onClick={(e) => link.href.startsWith('#') ? handleAnchorClick(e, link.href) : undefined}
                     className="text-sm text-ghost-white hover:text-cyber-cyan transition-colors"
                   >
                     {link.label}
@@ -97,6 +101,7 @@ export default function Footer() {
                 <li key={link.label}>
                   <a
                     href={link.href}
+                    onClick={(e) => link.href.startsWith('#') ? handleAnchorClick(e, link.href) : undefined}
                     className="text-sm text-ghost-white hover:text-cyber-cyan transition-colors"
                   >
                     {link.label}
@@ -113,9 +118,15 @@ export default function Footer() {
             <ul className="space-y-2">
               {footerLinks.legal.map((link) => (
                 <li key={link.label}>
-                  <Link to={link.href} className="text-sm text-ghost-white hover:text-cyber-cyan transition-colors">
+                  <a
+                    href={link.href}
+                    onClick={(e) => {
+                      if (link.href === '#') e.preventDefault();
+                    }}
+                    className="text-sm text-ghost-white hover:text-cyber-cyan transition-colors"
+                  >
                     {link.label}
-                  </Link>
+                  </a>
                 </li>
               ))}
             </ul>

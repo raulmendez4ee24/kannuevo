@@ -123,24 +123,6 @@ function LandingPage() {
   );
 }
 
-function LegalPage({ title, content }: { title: string; content: string[] }) {
-  return (
-    <div className="min-h-screen bg-void-black text-frost-white">
-      <div className="max-w-4xl mx-auto px-6 py-16">
-        <Link to="/" className="text-cyber-cyan hover:underline text-sm font-mono tracking-wider">
-          ← Volver al inicio
-        </Link>
-        <h1 className="font-display text-4xl font-bold mt-6 mb-8">{title}</h1>
-        <div className="space-y-4 text-ghost-white leading-relaxed">
-          {content.map((p, i) => (
-            <p key={i}>{p}</p>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // Protected Route Component
 function ProtectedRoute({ children, permission }: { children: React.ReactNode; permission?: string }) {
   const { isAuthenticated, isLoading, hasPermission } = useAuth();
@@ -217,45 +199,13 @@ function AppRoutes() {
       <Routes location={location} key={location.pathname}>
         {/* Landing Page */}
         <Route path="/" element={<LandingPage />} />
-        <Route
-          path="/privacy"
-          element={
-            <LegalPage
-              title="Política de Privacidad"
-              content={[
-                'Recopilamos solo los datos necesarios para operar los servicios de automatización y soporte.',
-                'Protegemos la información con controles de acceso, cifrado en tránsito y políticas de retención.',
-                'Puedes solicitar actualización o eliminación de tus datos en cualquier momento a través del formulario de contacto.',
-              ]}
-            />
-          }
-        />
-        <Route
-          path="/terms"
-          element={
-            <LegalPage
-              title="Términos y Condiciones"
-              content={[
-                'El uso de la plataforma implica aceptar los alcances del servicio contratados en tu plan.',
-                'La activación de servicios y entregables está sujeta a confirmación de pago.',
-                'Nos reservamos el derecho de suspender accesos en caso de uso indebido o incumplimiento.',
-              ]}
-            />
-          }
-        />
-        <Route
-          path="/data-deletion"
-          element={
-            <LegalPage
-              title="Eliminación de Datos"
-              content={[
-                'Si deseas eliminar datos personales o de operación, envía la solicitud desde la sección de contacto.',
-                'Validaremos identidad y procesaremos la solicitud dentro de los plazos aplicables.',
-                'La eliminación puede afectar historial, reportes y funciones asociadas en el dashboard.',
-              ]}
-            />
-          }
-        />
+        <Route path="/hero" element={<LandingPage />} />
+        <Route path="/workforce" element={<LandingPage />} />
+        <Route path="/services" element={<LandingPage />} />
+        <Route path="/process" element={<LandingPage />} />
+        <Route path="/audit" element={<LandingPage />} />
+        <Route path="/contact" element={<LandingPage />} />
+        <Route path="/express" element={<LandingPage />} />
 
         {/* Auth Routes */}
         <Route
@@ -383,12 +333,12 @@ function AppRoutes() {
               <div className="text-center">
                 <h1 className="text-6xl font-bold text-cyber-cyan font-display mb-4">404</h1>
                 <p className="text-ghost-white mb-6">Página no encontrada</p>
-                <Link
-                  to="/"
+                <a
+                  href="/"
                   className="inline-flex items-center gap-2 px-4 py-2 bg-cyber-cyan/10 border border-cyber-cyan text-cyber-cyan rounded-lg hover:bg-cyber-cyan/20 transition-colors"
                 >
                   Volver al Inicio
-                </Link>
+                </a>
               </div>
             </div>
           }
