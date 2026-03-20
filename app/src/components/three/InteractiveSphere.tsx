@@ -1,6 +1,6 @@
 import { useRef, useMemo, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { OrbitControls, Float } from '@react-three/drei';
+import { Float } from '@react-three/drei';
 import * as THREE from 'three';
 
 interface SphereCoreProps {
@@ -245,7 +245,7 @@ export default function InteractiveSphere() {
   return (
     <div 
       ref={containerRef}
-      className="w-full h-full min-h-[500px] cursor-pointer"
+      className="pointer-events-none w-full h-full min-h-[360px] lg:min-h-[500px] lg:pointer-events-auto lg:cursor-pointer"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -265,13 +265,6 @@ export default function InteractiveSphere() {
         <SphereCore isHovered={isHovered} />
         <DataRings />
         
-        <OrbitControls
-          enableZoom={false}
-          enablePan={false}
-          rotateSpeed={0.5}
-          autoRotate
-          autoRotateSpeed={0.5}
-        />
       </Canvas>
       
       {/* Hover indicator */}

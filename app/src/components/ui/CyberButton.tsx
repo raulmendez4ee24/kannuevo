@@ -36,10 +36,30 @@ export default function CyberButton({
       : 'bg-neon-purple/10 border-neon-purple text-neon-purple hover:bg-neon-purple/20';
 
   const baseClass = `inline-flex items-center gap-2 justify-center border rounded-lg font-mono tracking-wider transition-all ${sizeClasses} ${variantClasses} ${className}`;
+  const isHashLink = href?.startsWith('#');
+  const isDirectNavigation = Boolean(
+    href &&
+    (
+      href.startsWith('http://')
+      || href.startsWith('https://')
+      || href.startsWith('mailto:')
+      || href.startsWith('tel:')
+      || href.includes('.html')
+    ),
+  );
 
-  if (href?.startsWith('#')) {
+  if (isHashLink && href) {
     return (
       <a href={href} onClick={(e) => handleAnchorClick(e, href)} className={baseClass}>
+        {icon}
+        {children}
+      </a>
+    );
+  }
+
+  if (isDirectNavigation && href) {
+    return (
+      <a href={href} className={baseClass} onClick={onClick}>
         {icon}
         {children}
       </a>

@@ -4,4 +4,6 @@
 .git
 .DS_Store
 *.log
-
+.cursor
+app/test-results
+app/qa/reports

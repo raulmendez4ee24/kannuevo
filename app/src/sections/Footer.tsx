@@ -6,19 +6,20 @@ export default function Footer() {
 
   const footerLinks = {
     servicios: [
-      { label: 'Express', href: '#services' },
-      { label: 'Arquitectura', href: '#services' },
+      { label: 'Casos de uso', href: '#services' },
+      { label: 'Planes', href: '#workforce' },
       { label: 'Auditoria IA', href: '#audit' },
+      { label: 'Catalogo', href: '/catalogo.html' },
     ],
     empresa: [
-      { label: 'Nosotros', href: '#' },
+      { label: 'FAQ', href: '#faq' },
       { label: 'Proceso', href: '#process' },
       { label: 'Contacto', href: '#contact' },
     ],
     legal: [
-      { label: 'Privacidad', href: '#' },
-      { label: 'Terminos', href: '#' },
-      { label: 'Eliminacion de datos', href: '#' },
+      { label: 'Privacidad', href: '/legal/privacidad.html' },
+      { label: 'Terminos', href: '/legal/terminos.html' },
+      { label: 'Eliminacion de datos', href: '/legal/eliminacion-datos.html' },
     ],
   };
 
@@ -31,7 +32,7 @@ export default function Footer() {
 
   return (
     <footer className="relative pt-16 pb-8 border-t border-terminal-gray/30">
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-px bg-gradient-to-r from-transparent via-cyber-cyan/50 to-transparent" />
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 hidden sm:block w-[600px] h-px bg-gradient-to-r from-transparent via-cyber-cyan/50 to-transparent" />
       
       <div className="max-w-[1400px] mx-auto px-6 lg:px-12">
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8 mb-12">
@@ -52,8 +53,7 @@ export default function Footer() {
               </div>
             </a>
             <p className="text-ghost-white text-sm max-w-xs mb-6">
-              Transformamos operaciones con inteligencia artificial. 
-              WhatsApp automatizado en 72 horas.
+              Automatizacion de procesos con IA para atencion, seguimiento y operacion 24/7.
             </p>
             
             <div className="flex items-center gap-3">
@@ -75,7 +75,7 @@ export default function Footer() {
 
           <div>
             <h4 className="font-mono text-xs text-ghost-white tracking-widest mb-4">
-              SERVICIOS
+              SOLUCIONES
             </h4>
             <ul className="space-y-2">
               {footerLinks.servicios.map((link) => (
@@ -120,9 +120,6 @@ export default function Footer() {
                 <li key={link.label}>
                   <a
                     href={link.href}
-                    onClick={(e) => {
-                      if (link.href === '#') e.preventDefault();
-                    }}
                     className="text-sm text-ghost-white hover:text-cyber-cyan transition-colors"
                   >
                     {link.label}

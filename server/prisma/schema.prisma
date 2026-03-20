@@ -137,8 +137,23 @@ model User {
   auditLogs    AuditLog[]
   passwordResets PasswordResetToken[]
   otpCodes     OtpCode[]
+  oauthAccounts OAuthAccount[]
 
   @@index([createdAt])
+}
+
+model OAuthAccount {
+  id             String   @id @default(cuid())
+  userId         String
+  provider       String
+  providerUserId String
+  email          String?
+  createdAt      DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerUserId])
+  @@index([userId])
 }
 
 model Membership {

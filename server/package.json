@@ -4,11 +4,16 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
+    "predev": "npm run prisma:generate",
     "dev": "tsx watch src/index.ts",
+    "prebuild": "npm run prisma:generate",
     "build": "tsc -p tsconfig.json",
+    "prestart": "npm run prisma:generate",
     "start": "node dist/index.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
+    "db:push": "prisma db push",
+    "db:prepare": "npm run prisma:generate && npm run db:push && npm run seed",
     "prisma:studio": "prisma studio",
     "seed": "tsx prisma/seed.ts"
   },
@@ -19,6 +24,8 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
+    "google-auth-library": "^10.6.1",
+    "jose": "^6.2.1",
     "nodemailer": "^6.10.1",
     "stripe": "^17.7.0",
     "zod": "^4.3.5"

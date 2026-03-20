@@ -35,11 +35,7 @@ STRIPE_WEBHOOK_SECRET=whsec_tu_webhook_secret_aqui
 
 ### Frontend (Vite)
 
-Crea un archivo `.env` en la carpeta `app/`:
-
-```bash
-VITE_STRIPE_PUBLISHABLE_KEY=pk_test_tu_clave_publica_aqui
-```
+El frontend actual usa **Stripe Checkout hospedado**, asi que no necesita capturar tarjeta ni usar una `publishable key` para renderizar Elements.
 
 **Nota:** En producción, usa las claves `live` en lugar de `test`.
 
@@ -55,10 +51,20 @@ Los webhooks permiten que Stripe notifique a tu servidor cuando un pago se compl
 4. Click en "Add endpoint"
 5. URL del endpoint: `https://tu-app.up.railway.app/api/payment/webhook`
 6. Selecciona estos eventos:
-   - `payment_intent.succeeded`
+   - `checkout.session.completed`
+   - `checkout.session.async_payment_succeeded`
+   - `checkout.session.async_payment_failed`
+   - `checkout.session.expired`
    - `payment_intent.payment_failed`
 7. Copia el **Signing secret** (empieza con `whsec_`)
 8. Agrégala como `STRIPE_WEBHOOK_SECRET` en Railway
+
+### Flujo real del proyecto
+
+- La app crea sesiones en `POST /api/payment/checkout-session`
+- El frontend redirige al usuario a Stripe Checkout
+- Stripe confirma el resultado en `POST /api/payment/webhook`
+- El backend actualiza el registro del pago en la base de datos
 
 ### En desarrollo local:
 
@@ -102,8 +108,8 @@ Si todo está configurado correctamente, deberías ver:
 
 ### Error: "El sistema de pagos no está configurado"
 
-- Verifica que `VITE_STRIPE_PUBLISHABLE_KEY` esté en el `.env` del frontend
-- Reconstruye la aplicación frontend después de agregar la variable
+- Verifica que `STRIPE_SECRET_KEY` esté configurado en el backend
+- Reinicia el servicio después de agregar la variable
 
 ### Webhook no funciona
 

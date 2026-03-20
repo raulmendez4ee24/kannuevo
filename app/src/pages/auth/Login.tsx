@@ -1,10 +1,55 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { Mail, Lock, Eye, EyeOff, Cpu, Shield, Zap, AlertCircle, ShieldCheck } from 'lucide-react';
 
 type Step = 'credentials' | '2fa';
+
+declare global {
+  interface Window {
+    google?: {
+      accounts: {
+        id: {
+          initialize: (options: { client_id: string; callback: (response: { credential?: string }) => void }) => void;
+          renderButton: (element: HTMLElement, options: Record<string, unknown>) => void;
+          prompt: () => void;
+        };
+      };
+    };
+    AppleID?: {
+      auth: {
+        init: (config: Record<string, unknown>) => void;
+        signIn: () => Promise<{ authorization?: { id_token?: string } }>;
+      };
+    };
+  }
+}
+
+function loadScript(src: string) {
+  return new Promise<void>((resolve, reject) => {
+    const existing = document.querySelector(`script[src="${src}"]`) as HTMLScriptElement | null;
+    if (existing) {
+      if (existing.dataset.loaded === 'true') resolve();
+      else {
+        existing.addEventListener('load', () => resolve(), { once: true });
+        existing.addEventListener('error', () => reject(new Error(`Failed to load ${src}`)), { once: true });
+      }
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.src = src;
+    script.async = true;
+    script.defer = true;
+    script.onload = () => {
+      script.dataset.loaded = 'true';
+      resolve();
+    };
+    script.onerror = () => reject(new Error(`Failed to load ${src}`));
+    document.body.appendChild(script);
+  });
+}
 
 export default function Login() {
   const [step, setStep] = useState<Step>('credentials');
@@ -15,10 +60,58 @@ export default function Login() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const { requestLoginOTP, loginWithOTP } = useAuth();
+  const { requestLoginOTP, loginWithOTP, loginWithSocial } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const returnUrl = searchParams.get('returnUrl') || '/dashboard';
+  const googleButtonRef = useRef<HTMLDivElement | null>(null);
+  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined;
+
+  useEffect(() => {
+    if (step !== 'credentials' || !googleClientId || !googleButtonRef.current) return;
+
+    let cancelled = false;
+    void (async () => {
+      try {
+        await loadScript('https://accounts.google.com/gsi/client');
+        if (cancelled || !window.google || !googleButtonRef.current) return;
+
+        googleButtonRef.current.innerHTML = '';
+        window.google.accounts.id.initialize({
+          client_id: googleClientId,
+          callback: async (response) => {
+            if (!response.credential) return;
+            setError('');
+            setIsLoading(true);
+            try {
+              await loginWithSocial('google', response.credential);
+              navigate(returnUrl);
+            } catch (err) {
+              setError(err instanceof Error ? err.message : 'No se pudo iniciar con Google');
+            } finally {
+              setIsLoading(false);
+            }
+          },
+        });
+        window.google.accounts.id.renderButton(googleButtonRef.current, {
+          type: 'standard',
+          theme: 'outline',
+          size: 'large',
+          text: 'continue_with',
+          shape: 'pill',
+          width: 320,
+        });
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : 'No se pudo cargar Google');
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [googleClientId, loginWithSocial, navigate, returnUrl, step]);
 
   // Step 1: verify password via API (without setting user in context), then send OTP
   const handleCredentials = async (e: React.FormEvent) => {
@@ -67,11 +160,11 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-void-black flex items-center justify-center p-4">
+    <main className="min-h-screen bg-void-black flex items-center justify-center p-4">
       {/* Background effects */}
-      <div className="absolute inset-0 grid-bg opacity-30" />
-      <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] ambient-glow opacity-30" />
-      <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] ambient-glow ambient-glow--purple opacity-30" />
+      <div className="absolute inset-0 grid-bg opacity-30" aria-hidden="true" />
+      <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] ambient-glow opacity-30" aria-hidden="true" />
+      <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] ambient-glow ambient-glow--purple opacity-30" aria-hidden="true" />
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -147,13 +240,32 @@ export default function Login() {
                 onSubmit={handleCredentials}
                 className="space-y-4"
               >
+                {googleClientId && (
+                  <div className="space-y-3">
+                    <div className="grid gap-3">
+                      {googleClientId && (
+                        <div className="rounded-lg border border-terminal-gray/50 bg-void-black/40 p-2">
+                          <div ref={googleButtonRef} className="flex justify-center" />
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1 h-px bg-terminal-gray/40" />
+                      <span className="font-mono text-[10px] text-terminal-gray tracking-widest">O ENTRA CON CORREO</span>
+                      <div className="flex-1 h-px bg-terminal-gray/40" />
+                    </div>
+                  </div>
+                )}
+
                 <div>
-                  <label className="block font-mono text-[10px] text-ghost-white tracking-wider mb-2">
+                  <label htmlFor="login-email" className="block font-mono text-[10px] text-ghost-white tracking-wider mb-2">
                     CORREO ELECTRÓNICO
                   </label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-terminal-gray" />
                     <input
+                      id="login-email"
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
@@ -165,12 +277,13 @@ export default function Login() {
                 </div>
 
                 <div>
-                  <label className="block font-mono text-[10px] text-ghost-white tracking-wider mb-2">
+                  <label htmlFor="login-password" className="block font-mono text-[10px] text-ghost-white tracking-wider mb-2">
                     CONTRASEÑA
                   </label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-terminal-gray" />
                     <input
+                      id="login-password"
                       type={showPassword ? 'text' : 'password'}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
@@ -181,6 +294,8 @@ export default function Login() {
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
+                      aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                      title={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-terminal-gray hover:text-frost-white transition-colors"
                     >
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -235,10 +350,11 @@ export default function Login() {
                 </div>
 
                 <div>
-                  <label className="block font-mono text-[10px] text-ghost-white tracking-wider mb-2">
+                  <label htmlFor="login-otp" className="block font-mono text-[10px] text-ghost-white tracking-wider mb-2">
                     CÓDIGO DE VERIFICACIÓN
                   </label>
                   <input
+                    id="login-otp"
                     type="text"
                     value={otp}
                     onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
@@ -319,6 +435,14 @@ export default function Login() {
               </div>
             )}
 
+            {step === 'credentials' && googleClientId && (
+              <div className="mt-4 p-3 rounded-lg bg-cyber-cyan/5 border border-cyber-cyan/20">
+                <p className="text-[11px] text-ghost-white leading-relaxed">
+                  Google crea o vincula tu cuenta de forma segura con el correo verificado.
+                </p>
+              </div>
+            )}
+
             {/* Security badges */}
             <div className="mt-6 flex items-center justify-center gap-4">
               <div className="flex items-center gap-1 text-terminal-gray">
@@ -337,6 +461,6 @@ export default function Login() {
           </div>
         </div>
       </motion.div>
-    </div>
+    </main>
   );
 }

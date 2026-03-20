@@ -221,7 +221,7 @@ function ParticleField() {
 
 export default function NeuralNetworkBackground() {
   return (
-    <div className="fixed inset-0 -z-10">
+    <div className="fixed inset-0 -z-10" aria-hidden="true">
       <Canvas
         camera={{ position: [0, 0, 12], fov: 60 }}
         dpr={[1, 1.5]}

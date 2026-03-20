@@ -40,10 +40,11 @@ export default function HUD({ currentSection = 'INICIO' }: HUDProps) {
 
   const navItems = [
     { label: 'INICIO', href: '#hero' },
+    { label: 'SOLUCIONES', href: '#services' },
     { label: 'FUERZA LABORAL', href: '#workforce' },
-    { label: 'SERVICIOS', href: '#services' },
     { label: 'PROCESO', href: '#process' },
     { label: 'AUDITORIA', href: '#audit' },
+    { label: 'FAQ', href: '#faq' },
     { label: 'CONTACTO', href: '#contact' },
   ];
 
@@ -149,14 +150,13 @@ export default function HUD({ currentSection = 'INICIO' }: HUDProps) {
 
               {/* CTA Button */}
               <motion.a
-                href="#services"
-                onClick={(e) => handleAnchorClick(e, '#services')}
+                href="/catalogo.html"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 className="hidden sm:flex items-center gap-2 px-5 py-2.5 bg-cyber-cyan/10 border border-cyber-cyan text-cyber-cyan font-mono text-xs tracking-widest hover:bg-cyber-cyan/20 hover:shadow-cyber-glow transition-all duration-300"
               >
                 <Zap className="w-3 h-3" />
-                VER_PLANES
+                VER_CATALOGO
               </motion.a>
 
               {/* Mobile Menu Button */}
@@ -210,18 +210,15 @@ export default function HUD({ currentSection = 'INICIO' }: HUDProps) {
                 </motion.button>
               </Link>
               <motion.a
-                href="#workforce"
+                href="/catalogo.html"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.35 }}
-                onClick={(e) => {
-                  handleAnchorClick(e, '#workforce');
-                  setIsMobileMenuOpen(false);
-                }}
-                className="mt-2 flex items-center justify-center gap-2 px-5 py-3 bg-cyber-cyan/10 border border-cyber-cyan text-cyber-cyan font-mono text-sm tracking-widest"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="mt-2 w-full flex items-center justify-center gap-2 px-5 py-3 bg-cyber-cyan/10 border border-cyber-cyan text-cyber-cyan font-mono text-sm tracking-widest"
               >
                 <Zap className="w-4 h-4" />
-                VER_PLANES
+                VER_CATALOGO
               </motion.a>
             </nav>
           </motion.div>
@@ -234,6 +231,7 @@ export default function HUD({ currentSection = 'INICIO' }: HUDProps) {
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.8, delay: 0.5, ease: [0.4, 0, 0.2, 1] }}
         className="fixed bottom-0 left-0 right-0 z-40 hidden lg:block"
+        aria-hidden="true"
       >
         <div className="max-w-[1400px] mx-auto px-12">
           <div className="flex items-center justify-between py-2 px-4 bg-void-black/80 backdrop-blur-md border-t border-cyber-cyan/10">

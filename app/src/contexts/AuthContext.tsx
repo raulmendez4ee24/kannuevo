@@ -26,6 +26,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
+  loginWithSocial: (provider: 'google' | 'apple', idToken: string) => Promise<void>;
   requestLoginOTP: (email: string) => Promise<void>;
   loginWithOTP: (email: string, otp: string) => Promise<void>;
   register: (email: string, password: string, name: string, orgName: string) => Promise<void>;
@@ -65,6 +66,10 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
     code === 'INVALID_OTP' ? 'Código OTP inválido' :
     code === 'EMAIL_IN_USE' ? 'El email ya está registrado' :
     code === 'INVALID_RESET_TOKEN' ? 'Token inválido o expirado' :
+    code === 'GOOGLE_LOGIN_NOT_CONFIGURED' ? 'Google login no configurado' :
+    code === 'APPLE_LOGIN_NOT_CONFIGURED' ? 'Apple login no configurado' :
+    code === 'INVALID_GOOGLE_TOKEN' ? 'Token de Google inválido' :
+    code === 'INVALID_APPLE_TOKEN' ? 'Token de Apple inválido' :
     code === 'NO_ORG_ACCESS' ? 'No tienes acceso a esta organización' :
     code === 'TOO_MANY_REQUESTS' ? 'Demasiados intentos. Espera unos minutos.' :
     'Error de servidor';
@@ -82,6 +87,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Check for existing session on mount
   useEffect(() => {
+    const hashPath = window.location.hash.replace(/^#/, '') || '/';
+    const shouldBootstrapSession =
+      hashPath.startsWith('/dashboard') ||
+      hashPath.startsWith('/login') ||
+      hashPath.startsWith('/register') ||
+      hashPath.startsWith('/forgot-password') ||
+      hashPath.startsWith('/reset-password');
+
+    if (!shouldBootstrapSession) {
+      setIsLoading(false);
+      return;
+    }
+
     let cancelled = false;
     (async () => {
       setIsLoading(true);
@@ -117,6 +135,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const requestLoginOTP = async (email: string) => {
     await requestJson('/api/auth/login/otp/start', { method: 'POST', body: JSON.stringify({ email }) });
+  };
+
+  const loginWithSocial = async (provider: 'google' | 'apple', idToken: string) => {
+    setIsLoading(true);
+    try {
+      await requestJson(`/api/auth/oauth/${provider}`, {
+        method: 'POST',
+        body: JSON.stringify({ idToken }),
+      });
+      const me = await fetchMe();
+      setUser(me.user);
+      setIsImpersonating(me.isImpersonating);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const loginWithOTP = async (email: string, otp: string) => {
@@ -188,6 +221,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isAuthenticated: !!user,
       isLoading,
       login,
+      loginWithSocial,
       requestLoginOTP,
       loginWithOTP,
       register,

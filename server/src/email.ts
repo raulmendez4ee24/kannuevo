@@ -1,6 +1,6 @@
 import nodemailer from 'nodemailer';
 
-const RECIPIENT_EMAIL = process.env.NOTIFICATION_EMAIL || process.env.SMTP_USER || 'kanlogic05@gmail.com';
+const RECIPIENT_EMAIL = process.env.NOTIFICATION_EMAIL || process.env.SMTP_USER || 'mendez@kanlogic.lat';
 
 // Create transporter (using Gmail SMTP by default, can be configured via env vars)
 const transporter = nodemailer.createTransport({
@@ -66,6 +66,7 @@ export async function sendAuditEmail(data: {
   priorities: string[];
   monthlyLeads?: string;
   monthlyRevenue?: string;
+  selectedPlan?: string;
 }) {
   const mailOptions = {
     from: `"Kan Logic" <${process.env.SMTP_USER || RECIPIENT_EMAIL}>`,
@@ -81,6 +82,7 @@ export async function sendAuditEmail(data: {
       <h3>Información del negocio</h3>
       <p><strong>Nombre:</strong> ${data.businessName}</p>
       <p><strong>Tipo:</strong> ${data.businessType}</p>
+      <p><strong>Plan de interés:</strong> ${data.selectedPlan || 'No especificado'}</p>
       
       <h3>Prioridades</h3>
       <ul>
@@ -101,6 +103,7 @@ ${data.whatsapp ? `WhatsApp: ${data.whatsapp}` : ''}
 Información del negocio:
 Nombre: ${data.businessName}
 Tipo: ${data.businessType}
+Plan de interés: ${data.selectedPlan || 'No especificado'}
 
 Prioridades:
 ${data.priorities.map(p => `- ${p}`).join('\n')}

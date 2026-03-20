@@ -49,10 +49,17 @@
   
   html {
     scroll-behavior: smooth;
+    overflow-x: hidden;
   }
   
   body {
     @apply bg-void-black text-frost-white font-body antialiased;
+    overflow-x: hidden;
+  }
+
+  #root {
+    width: 100%;
+    max-width: 100%;
     overflow-x: hidden;
   }
   
@@ -266,6 +273,15 @@
       linear-gradient(rgba(0, 240, 255, 0.03) 1px, transparent 1px),
       linear-gradient(90deg, rgba(0, 240, 255, 0.03) 1px, transparent 1px);
     background-size: 50px 50px;
+  }
+
+  @media (max-width: 640px) {
+    .ambient-glow {
+      width: 18rem !important;
+      height: 18rem !important;
+      filter: blur(72px);
+      opacity: 0.2;
+    }
   }
 }
 

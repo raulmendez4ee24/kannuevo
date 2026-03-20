@@ -1,17 +1,18 @@
-import { motion } from 'framer-motion';
-import { useInView } from 'framer-motion';
+import { motion, useInView } from 'framer-motion';
 import { useRef, useState } from 'react';
 import CyberCard from '../components/ui/CyberCard';
-import { 
-  CreditCard, 
-  Mail, 
-  Monitor, 
-  Rocket, 
+import CyberButton from '../components/ui/CyberButton';
+import {
+  Search,
+  GitBranch,
+  Rocket,
+  Activity,
   BarChart3,
   ChevronRight,
   CheckCircle2,
   Clock,
-  type LucideIcon
+  ArrowRight,
+  type LucideIcon,
 } from 'lucide-react';
 
 interface ProcessStep {
@@ -26,61 +27,61 @@ interface ProcessStep {
 const processSteps: ProcessStep[] = [
   {
     number: '01',
-    title: 'Pago confirmado',
-    description: 'Recibes confirmacion por correo y WhatsApp.',
-    icon: CreditCard,
+    title: 'Diagnostico del cuello de botella',
+    description: 'Identificamos donde se te van horas, prospectos, seguimiento o control.',
+    icon: Search,
     details: [
-      'Factura automatica generada',
-      'Acceso al portal de cliente',
-      'Notificacion de bienvenida',
+      'Revision del flujo actual',
+      'Deteccion del trabajo repetitivo',
+      'Definicion del caso de uso mas rentable',
     ],
-    time: 'Inmediato',
+    time: '20-30 min',
   },
   {
     number: '02',
-    title: 'Contacto del equipo',
-    description: 'Te escribimos para coordinar la sesion de activacion.',
-    icon: Mail,
+    title: 'Mapa del proceso ideal',
+    description: 'Diseñamos como debe responder, escalar, registrar y reportar el sistema.',
+    icon: GitBranch,
     details: [
-      'Asignacion de especialista',
-      'Agendamiento de sesion',
-      'Preparacion de materiales',
+      'Reglas del flujo',
+      'Integraciones necesarias',
+      'Criterios de handoff a humano',
     ],
-    time: '15-30 min',
+    time: '24-48h',
   },
   {
     number: '03',
-    title: 'Sesion guiada',
-    description: 'Conectamos cuentas en pantalla, sin pedirte tecnicismos.',
-    icon: Monitor,
+    title: 'Piloto funcional',
+    description: 'Levantamos una version operativa para probarla con tu caso real.',
+    icon: Rocket,
     details: [
-      'Configuracion en vivo',
-      'Pruebas de funcionamiento',
-      'Capacitacion basica',
+      'Configuracion inicial',
+      'Pruebas en entorno real',
+      'Ajustes sobre conversaciones o tareas',
     ],
-    time: '45-60 min',
+    time: '72h',
   },
   {
     number: '04',
-    title: 'Activacion',
-    description: 'Publicamos el flujo y hacemos pruebas contigo.',
-    icon: Rocket,
+    title: 'Activacion con monitoreo',
+    description: 'El sistema entra a produccion con visibilidad de resultados y alertas.',
+    icon: Activity,
     details: [
       'Deploy a produccion',
-      'Pruebas finales',
-      'Documentacion entregada',
+      'Panel de actividad',
+      'Alertas y control de operacion',
     ],
-    time: '24h',
+    time: 'Semana 1',
   },
   {
     number: '05',
-    title: 'Uso diario',
-    description: 'Empiezas a operar y medimos resultados desde la primera semana.',
+    title: 'Optimizacion continua',
+    description: 'Se mejora con datos reales para aumentar conversion y bajar carga operativa.',
     icon: BarChart3,
     details: [
-      'Dashboard de metricas',
-      'Soporte continuo',
-      'Optimizacion mensual',
+      'Revision de metricas',
+      'Ajustes del flujo',
+      'Expansion a mas procesos',
     ],
     time: 'Continuo',
   },
@@ -94,7 +95,7 @@ export default function ProcessSection() {
   return (
     <section id="process" className="relative py-24 lg:py-32" ref={ref}>
       <div className="absolute inset-0 bg-gradient-to-b from-void-black via-steel-gray/20 to-void-black" />
-      
+
       <div className="relative z-10 max-w-[1400px] mx-auto px-6 lg:px-12">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -106,10 +107,11 @@ export default function ProcessSection() {
             PROCESO
           </span>
           <h2 className="font-display text-4xl lg:text-5xl font-bold text-frost-white mb-4">
-            Que pasa <span className="text-gradient">despues de pagar?</span>
+            Como entramos a tu <span className="text-gradient">operacion</span>
           </h2>
-          <p className="text-ghost-white text-lg max-w-2xl mx-auto">
-            Un proceso claro, sin sorpresas. De la confirmacion al uso diario.
+          <p className="text-ghost-white text-lg max-w-3xl mx-auto">
+            No vendemos humo. Entramos por un cuello de botella concreto, lo automatizamos
+            y despues escalamos con datos.
           </p>
         </motion.div>
 
@@ -143,7 +145,7 @@ export default function ProcessSection() {
                       {step.description}
                     </p>
                   </div>
-                  
+
                   {index < processSteps.length - 1 && (
                     <div className="absolute top-1/2 -right-2 w-4 h-px bg-terminal-gray">
                       <ChevronRight className="absolute -right-2 -top-2 w-4 h-4 text-terminal-gray" />
@@ -185,8 +187,8 @@ export default function ProcessSection() {
                   {processSteps[activeStep].description}
                 </p>
                 <ul className="grid grid-cols-3 gap-3">
-                  {processSteps[activeStep].details.map((detail, i) => (
-                    <li key={i} className="flex items-center gap-2 text-sm text-ghost-white">
+                  {processSteps[activeStep].details.map((detail) => (
+                    <li key={detail} className="flex items-center gap-2 text-sm text-ghost-white">
                       <CheckCircle2 className="w-4 h-4 text-matrix-green flex-shrink-0" />
                       {detail}
                     </li>
@@ -243,16 +245,16 @@ export default function ProcessSection() {
               <span className="font-mono text-sm text-error-crimson tracking-wider">ANTES</span>
             </div>
             <h3 className="font-display text-xl font-semibold text-frost-white mb-4">
-              Ejemplo tipo tienda
+              Operacion manual tipica
             </h3>
             <ul className="space-y-3">
               {[
-                '40 mensajes sin responder cada dia',
-                '2 horas diarias contestando lo mismo',
-                'Citas y prospectos perdidos por falta de seguimiento',
-              ].map((item, i) => (
-                <li key={i} className="flex items-start gap-2 text-ghost-white">
-                  <span className="text-error-crimson mt-1">×</span>
+                'Prospectos que escriben y nadie sigue a tiempo',
+                'Cobranza, agenda y recordatorios hechos a mano',
+                'Gerencia sin claridad real de que paso hoy',
+              ].map((item) => (
+                <li key={item} className="flex items-start gap-2 text-ghost-white">
+                  <span className="text-error-crimson mt-1">x</span>
                   {item}
                 </li>
               ))}
@@ -261,25 +263,41 @@ export default function ProcessSection() {
 
           <div className="bg-steel-gray/20 border border-matrix-green/30 rounded-xl p-6">
             <div className="flex items-center gap-2 mb-4">
-              <CheckCircle2 className="w-5 h-5 text-matrix-green" />
+              <BarChart3 className="w-5 h-5 text-matrix-green" />
               <span className="font-mono text-sm text-matrix-green tracking-wider">DESPUES</span>
             </div>
             <h3 className="font-display text-xl font-semibold text-frost-white mb-4">
-              Primeras semanas
+              Sistema operativo con IA
             </h3>
             <ul className="space-y-3">
               {[
-                '0 mensajes perdidos fuera de horario',
-                '80% de respuestas automaticas en FAQ',
-                'Agenda confirmada y seguimiento en el mismo chat',
-              ].map((item, i) => (
-                <li key={i} className="flex items-start gap-2 text-ghost-white">
-                  <CheckCircle2 className="w-4 h-4 text-matrix-green mt-0.5 flex-shrink-0" />
+                'Respuesta automatica y seguimiento consistente',
+                'Citas, cobranza y reportes corriendo sin perseguir gente',
+                'Panel, monitoreo y decisiones con mas control',
+              ].map((item) => (
+                <li key={item} className="flex items-start gap-2 text-ghost-white">
+                  <CheckCircle2 className="w-4 h-4 text-matrix-green mt-1 flex-shrink-0" />
                   {item}
                 </li>
               ))}
             </ul>
           </div>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={isInView ? { opacity: 1, y: 0 } : {}}
+          transition={{ delay: 0.7 }}
+          className="mt-10 text-center"
+        >
+          <CyberButton
+            href="#audit"
+            variant="primary"
+            size="lg"
+            icon={<ArrowRight className="w-4 h-4" />}
+          >
+            EMPEZAR CON UN PROCESO
+          </CyberButton>
         </motion.div>
       </div>
     </section>

@@ -1,11 +1,9 @@
 import { motion } from 'framer-motion';
 import { useInView } from 'framer-motion';
-import { useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
 import CyberCard from '../components/ui/CyberCard';
 import CyberButton from '../components/ui/CyberButton';
 import SecureCheckout from '../components/ui/SecureCheckout';
-import { useAuth } from '../contexts/AuthContext';
 import { 
   Bot, 
   MessageSquare, 
@@ -98,59 +96,67 @@ const products: Product[] = [
   {
     id: 'starter',
     name: 'Starter',
-    subtitle: 'WhatsApp que vende',
-    description: 'Para emprendedor / negocio chico. Dejas de perder mensajes y cierres.',
+    subtitle: 'WhatsApp que trabaja por ti',
+    description: 'Para negocio local o emprendedor que pierde clientes por no responder a tiempo.',
     features: [
-      'Bot WhatsApp/webchat',
-      'Agenda + recordatorios',
-      '3 automatizaciones',
-      'Panel básico de resultados',
+      'Responde WhatsApp 24/7 sin que estés presente',
+      'Agenda citas y manda recordatorios solo',
+      'Captura leads y nunca pierde un prospecto',
+      'Panel para ver qué hizo el sistema cada día',
+      'Precio fijo, sin sorpresas',
     ],
     setup: '',
-    monthly: '$600',
+    monthly: '$900 MXN',
   },
   {
     id: 'growth',
     name: 'Growth',
-    subtitle: 'Sistema Operativo del Negocio',
-    description: 'Para PyME. Tu negocio corre solo en tareas repetitivas.',
+    subtitle: 'Tu negocio opera solo',
+    description: 'Para PyME que gasta tiempo en tareas repetitivas que una persona debería estar haciendo.',
     features: [
-      'Todo Starter +',
-      '5–15 automatizaciones n8n',
-      '2–5 integraciones',
-      'Reporte semanal + monitoreo',
+      'Todo Starter incluido',
+      'Cobranza y seguimiento automático de clientes',
+      'Reportes semanales sin tocar una tecla',
+      '5-15 automatizaciones de tus procesos clave',
+      '2-5 integraciones con tus sistemas actuales',
+      'Monitoreo y alertas en tiempo real',
+      'Precio fijo, sin cobros por uso',
     ],
     setup: '',
-    monthly: '$3,000',
+    monthly: '$4,500 MXN',
     popular: true,
   },
   {
     id: 'commerce',
     name: 'Commerce',
-    subtitle: 'E-commerce Autopilot',
-    description: 'Para tienda grande. Sube ventas y baja soporte.',
+    subtitle: 'Tu tienda vende aunque estés dormido',
+    description: 'Para tienda o e-commerce que quiere vender más sin contratar más personal.',
     features: [
-      'Atención + pedidos + postventa',
-      'Recuperación de carrito',
-      'Reportes de ventas',
-      'Integración Shopify/plataforma',
+      'Todo Growth incluido',
+      'Atención, pedidos y postventa automatizados',
+      'Recuperación de carritos abandonados',
+      'Reportes de ventas diarios automáticos',
+      'Integración con Shopify u otras plataformas',
+      'Precio fijo, sin sorpresas',
     ],
     setup: '',
-    monthly: '$10,000',
+    monthly: '$12,000 MXN',
   },
   {
     id: 'enterprise',
     name: 'Enterprise',
-    subtitle: 'Auditoría + Automatización Total',
-    description: 'Para grandes empresas. Ahorras nómina y profesionalizas operación.',
+    subtitle: 'Automatización total de tu operación',
+    description: 'Para empresa que quiere reducir nómina operativa y profesionalizar sus procesos.',
     features: [
-      'Auditoría de procesos + roadmap',
-      'Agente autónomo PC/browser',
-      'RBAC, auditoría, políticas',
-      'SLA + monitoreo + auto-repair',
+      'Todo Commerce incluido',
+      'Auditoría completa de procesos + roadmap',
+      'Agente autónomo que usa PC y navegador solo',
+      'Control de accesos, auditoría y políticas',
+      'SLA garantizado + monitoreo + auto-reparación',
+      'Implementación acompañada por nuestro equipo',
     ],
     setup: '',
-    monthly: '$50,000',
+    monthly: '$50,000 MXN',
   },
 ];
 
@@ -180,28 +186,48 @@ function FeatureCard({ feature, index }: { feature: Feature; index: number }) {
     </motion.div>
   );
 }
-
-import { PENDING_CHECKOUT_KEY } from '../constants/plans';
-
 export default function DigitalWorkforceSection() {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: '-100px' });
-  const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState<{ id: string; name: string; price: string } | null>(null);
+  const [selectedPlan, setSelectedPlan] = useState<{
+    id: string;
+    name: string;
+    price: string;
+    billingLabel?: 'monthly' | 'one_time';
+  } | null>(null);
 
   const openCheckout = (plan: Product) => {
-    if (!isAuthenticated) {
-      try {
-        sessionStorage.setItem(PENDING_CHECKOUT_KEY, JSON.stringify({ id: plan.id, name: plan.name, price: plan.monthly }));
-      } catch (_) {}
-      navigate('/login?returnUrl=/dashboard');
-      return;
-    }
-    setSelectedPlan({ id: plan.id, name: plan.name, price: plan.monthly });
+    setSelectedPlan({ id: plan.id, name: plan.name, price: plan.monthly, billingLabel: 'monthly' });
     setIsCheckoutOpen(true);
   };
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const checkoutName = params.get('checkoutName');
+    const checkoutPrice = params.get('checkoutPrice');
+
+    if (!checkoutName || !checkoutPrice) return;
+
+    const checkoutId = params.get('checkoutId') || checkoutName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    const billingLabel = params.get('checkoutBilling') === 'one_time' ? 'one_time' : 'monthly';
+
+    setSelectedPlan({
+      id: checkoutId,
+      name: checkoutName,
+      price: checkoutPrice,
+      billingLabel,
+    });
+    setIsCheckoutOpen(true);
+
+    params.delete('checkoutId');
+    params.delete('checkoutName');
+    params.delete('checkoutPrice');
+    params.delete('checkoutBilling');
+    const nextQuery = params.toString();
+    const nextUrl = `${window.location.pathname}${nextQuery ? `?${nextQuery}` : ''}${window.location.hash}`;
+    window.history.replaceState({}, '', nextUrl);
+  }, []);
 
   return (
     <section id="workforce" className="relative py-24 lg:py-32" ref={ref}>
@@ -423,7 +449,7 @@ export default function DigitalWorkforceSection() {
                   </ul>
 
                   <div className="mb-6">
-                    <p className="font-mono text-[10px] text-ghost-white mb-1">DESDE</p>
+                    <p className="font-mono text-[10px] text-ghost-white mb-1">PRECIO FIJO</p>
                     <p className="font-mono text-2xl text-cyber-cyan font-bold">{product.monthly}<span className="text-sm text-ghost-white font-normal">/mes</span></p>
                   </div>
 
@@ -464,7 +490,6 @@ export default function DigitalWorkforceSection() {
         </motion.div>
       </div>
 
-      {/* Secure Checkout Modal */}
       {selectedPlan && (
         <SecureCheckout
           isOpen={isCheckoutOpen}
@@ -475,6 +500,7 @@ export default function DigitalWorkforceSection() {
           planId={selectedPlan.id}
           planName={selectedPlan.name}
           planPrice={selectedPlan.price}
+          billingLabel={selectedPlan.billingLabel}
         />
       )}
     </section>

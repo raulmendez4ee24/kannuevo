@@ -1,5 +1,4 @@
-import { motion } from 'framer-motion';
-import { useInView } from 'framer-motion';
+import { motion, useInView } from 'framer-motion';
 import { useRef, useState } from 'react';
 import CyberButton from '../components/ui/CyberButton';
 import CyberCard from '../components/ui/CyberCard';
@@ -10,7 +9,8 @@ import {
   Send,
   MessageSquare,
   ExternalLink,
-  CheckCircle2
+  CheckCircle2,
+  ArrowRight,
 } from 'lucide-react';
 
 export default function ContactSection() {
@@ -46,30 +46,28 @@ export default function ContactSection() {
     {
       icon: Mail,
       label: 'EMAIL',
-      value: 'kanlogic05@gmail.com',
-      href: 'mailto:kanlogic05@gmail.com',
+      value: 'mendez@kanlogic.lat',
+      href: 'mailto:mendez@kanlogic.lat',
     },
     {
       icon: Phone,
       label: 'WHATSAPP',
-      value: '523421055712',
+      value: '+52 342 105 5712',
       href: 'https://wa.me/523421055712',
     },
     {
       icon: MapPin,
-      label: 'UBICACIÓN',
+      label: 'UBICACION',
       value: 'Zapopan, Jal',
-      href: '#',
+      href: 'https://www.google.com/maps/search/?api=1&query=Zapopan%2C%20Jalisco',
     },
   ];
 
   return (
     <section id="contact" className="relative py-24 lg:py-32" ref={ref}>
-      {/* Background */}
       <div className="absolute inset-0 grid-bg opacity-30" />
 
       <div className="relative z-10 max-w-[1400px] mx-auto px-6 lg:px-12">
-        {/* Section header */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={isInView ? { opacity: 1, y: 0 } : {}}
@@ -80,21 +78,45 @@ export default function ContactSection() {
             CONTACTO
           </span>
           <h2 className="font-display text-4xl lg:text-5xl font-bold text-frost-white mb-4">
-            Hablemos de tu <span className="text-gradient">operación</span>
+            Si ya identificaste el problema, <span className="text-gradient">hablemos</span>
           </h2>
-          <p className="text-ghost-white text-lg max-w-2xl mx-auto">
-            ¿Tienes dudas? Escríbenos. Respondemos en menos de 24 horas.
+          <p className="text-ghost-white text-lg max-w-3xl mx-auto">
+            La mejor siguiente accion no es seguir leyendo. Es definir el primer proceso
+            que te vamos a quitar de encima.
           </p>
         </motion.div>
 
-        <div className="grid lg:grid-cols-2 gap-8 max-w-4xl mx-auto">
-          {/* Contact methods */}
+        <div className="grid xl:grid-cols-[0.8fr_1.2fr] gap-8 max-w-6xl mx-auto">
           <motion.div
             initial={{ opacity: 0, x: -30 }}
             animate={isInView ? { opacity: 1, x: 0 } : {}}
             transition={{ delay: 0.2 }}
             className="space-y-4"
           >
+            <CyberCard className="bg-steel-gray/25">
+              <p className="font-mono text-[10px] text-cyber-cyan tracking-widest mb-3">SIGUIENTE PASO</p>
+              <h3 className="font-display text-2xl font-bold text-frost-white mb-3">
+                Entra por un proceso, no por todo a la vez
+              </h3>
+              <p className="text-sm text-ghost-white mb-5">
+                El cliente ideal no necesita una consultoria eterna. Necesita resolver un
+                cuello de botella visible y ver resultados rapido.
+              </p>
+              <div className="space-y-3">
+                {[
+                  'WhatsApp y seguimiento',
+                  'Agenda y recordatorios',
+                  'Cobranza y reportes',
+                  'Pedidos y postventa',
+                ].map((item) => (
+                  <div key={item} className="flex items-center gap-3 text-sm text-ghost-white">
+                    <CheckCircle2 className="w-4 h-4 text-matrix-green" />
+                    {item}
+                  </div>
+                ))}
+              </div>
+            </CyberCard>
+
             {contactMethods.map((method, index) => (
               <motion.a
                 key={method.label}
@@ -119,7 +141,6 @@ export default function ContactSection() {
               </motion.a>
             ))}
 
-            {/* Quick WhatsApp CTA */}
             <motion.a
               href="https://wa.me/523421055712"
               initial={{ opacity: 0, y: 20 }}
@@ -129,70 +150,78 @@ export default function ContactSection() {
             >
               <MessageSquare className="w-5 h-5 text-matrix-green" />
               <span className="font-mono text-sm text-matrix-green tracking-wider">
-                CHAT DIRECTO POR WHATSAPP
+                HABLAR POR WHATSAPP
               </span>
+              <ArrowRight className="w-4 h-4 text-matrix-green" />
             </motion.a>
           </motion.div>
 
-          {/* Contact form */}
           <motion.div
             initial={{ opacity: 0, x: 30 }}
             animate={isInView ? { opacity: 1, x: 0 } : {}}
             transition={{ delay: 0.3 }}
           >
             {!isSubmitted ? (
-              <CyberCard>
-                <h3 className="font-display text-xl font-semibold text-frost-white mb-6">
-                  Envíanos un mensaje
+              <CyberCard className="bg-steel-gray/25">
+                <h3 className="font-display text-2xl font-semibold text-frost-white mb-2">
+                  Escribenos tu caso
                 </h3>
+                <p className="text-sm text-ghost-white mb-6">
+                  Dinos que parte del negocio te esta drenando tiempo o dinero.
+                </p>
                 <form onSubmit={handleSubmit} className="space-y-4">
-                  <div>
-                    <label className="block font-mono text-xs text-ghost-white mb-2">
-                      Nombre
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      placeholder="Tu nombre"
-                      required
-                      className="w-full px-4 py-3 bg-steel-gray/50 border border-terminal-gray/50 rounded-lg text-frost-white placeholder-ghost-white/50 focus:border-cyber-cyan focus:outline-none focus:ring-1 focus:ring-cyber-cyan/50 transition-all font-mono text-sm"
-                    />
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <label htmlFor="contact-name" className="block font-mono text-xs text-ghost-white mb-2">
+                        Nombre
+                      </label>
+                      <input
+                        id="contact-name"
+                        type="text"
+                        value={formData.name}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        placeholder="Tu nombre"
+                        required
+                        className="w-full px-4 py-3 bg-steel-gray/50 border border-terminal-gray/50 rounded-lg text-frost-white placeholder-ghost-white/50 focus:border-cyber-cyan focus:outline-none focus:ring-1 focus:ring-cyber-cyan/50 transition-all font-mono text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="contact-email" className="block font-mono text-xs text-ghost-white mb-2">
+                        Correo
+                      </label>
+                      <input
+                        id="contact-email"
+                        type="email"
+                        value={formData.email}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        placeholder="tu@email.com"
+                        required
+                        className="w-full px-4 py-3 bg-steel-gray/50 border border-terminal-gray/50 rounded-lg text-frost-white placeholder-ghost-white/50 focus:border-cyber-cyan focus:outline-none focus:ring-1 focus:ring-cyber-cyan/50 transition-all font-mono text-sm"
+                      />
+                    </div>
                   </div>
                   <div>
-                    <label className="block font-mono text-xs text-ghost-white mb-2">
-                      Correo
-                    </label>
-                    <input
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      placeholder="tu@email.com"
-                      required
-                      className="w-full px-4 py-3 bg-steel-gray/50 border border-terminal-gray/50 rounded-lg text-frost-white placeholder-ghost-white/50 focus:border-cyber-cyan focus:outline-none focus:ring-1 focus:ring-cyber-cyan/50 transition-all font-mono text-sm"
-                    />
-                  </div>
-                  <div>
-                    <label className="block font-mono text-xs text-ghost-white mb-2">
-                      Mensaje
+                    <label htmlFor="contact-message" className="block font-mono text-xs text-ghost-white mb-2">
+                      Que quieres automatizar
                     </label>
                     <textarea
+                      id="contact-message"
                       value={formData.message}
                       onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                      placeholder="¿En qué podemos ayudarte?"
+                      placeholder="Ej. pierdo prospectos por WhatsApp, no tengo seguimiento y mi equipo hace reportes a mano..."
                       required
-                      rows={4}
+                      rows={6}
                       className="w-full px-4 py-3 bg-steel-gray/50 border border-terminal-gray/50 rounded-lg text-frost-white placeholder-ghost-white/50 focus:border-cyber-cyan focus:outline-none focus:ring-1 focus:ring-cyber-cyan/50 transition-all font-mono text-sm resize-none"
                     />
                   </div>
                   <CyberButton
                     type="submit"
                     variant="primary"
-                    size="md"
+                    size="lg"
                     className="w-full justify-center"
                     icon={<Send className="w-4 h-4" />}
                   >
-                    ENVIAR MENSAJE
+                    ENVIAR CASO
                   </CyberButton>
                 </form>
               </CyberCard>
@@ -207,10 +236,10 @@ export default function ContactSection() {
                   <CheckCircle2 className="w-8 h-8 text-matrix-green" />
                 </motion.div>
                 <h3 className="font-display text-xl font-bold text-frost-white mb-2">
-                  ¡Mensaje enviado!
+                  Caso recibido
                 </h3>
-                <p className="text-ghost-white text-sm">
-                  Te responderemos en menos de 24 horas.
+                <p className="text-ghost-white text-sm max-w-md">
+                  Ya tenemos contexto para aterrizar una automatizacion que si mueva la operacion.
                 </p>
               </CyberCard>
             )}
