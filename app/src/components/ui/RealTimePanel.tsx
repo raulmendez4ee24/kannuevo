@@ -46,7 +46,7 @@ export default function RealTimePanel({ title = 'MÉTRICAS EN TIEMPO REAL', clas
         const newData = [...prev.slice(1), 40 + Math.random() * 40];
         return newData;
       });
-    }, 3000);
+    }, 10000);
 
     return () => clearInterval(interval);
   }, []);
@@ -194,7 +194,7 @@ export function MiniRealTimePanel({ className = '' }: { className?: string }) {
           ? m.value + Math.floor(Math.random() * 10)
           : m.value + (Math.random() - 0.5) * 0.1
       })));
-    }, 2000);
+    }, 8000);
     return () => clearInterval(interval);
   }, []);
 

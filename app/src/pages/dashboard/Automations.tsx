@@ -54,7 +54,7 @@ function AutomationCard({
   onToggle: (id: string) => void;
   onRepair: (id: string) => void;
 }) {
-  const Icon = (automationIcons[automation.config.trigger] || automationIcons.default) as React.ElementType;
+  const Icon = (automationIcons[automation.config.trigger] || automationIcons.default) as React.ComponentType<{ className?: string }>;
   const health = healthIndicators[automation.healthStatus];
 
   return (
@@ -68,7 +68,6 @@ function AutomationCard({
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-cyber-cyan/10 rounded-lg flex items-center justify-center">
-            {/* @ts-expect-error - TypeScript strict template literal issue */}
             <Icon className="w-5 h-5 text-cyber-cyan" />
           </div>
           <div>

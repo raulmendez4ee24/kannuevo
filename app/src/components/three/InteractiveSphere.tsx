@@ -24,7 +24,7 @@ function SphereCore({ isHovered }: SphereCoreProps) {
 
   // Create particles around the sphere
   const particlePositions = useMemo(() => {
-    const count = 150;
+    const count = 80;
     const positions = new Float32Array(count * 3);
     
     for (let i = 0; i < count; i++) {
@@ -116,7 +116,7 @@ function SphereCore({ isHovered }: SphereCoreProps) {
       
       {/* Glow sphere */}
       <mesh ref={glowRef}>
-        <sphereGeometry args={[2.5, 32, 32]} />
+        <sphereGeometry args={[2.5, 16, 16]} />
         <meshBasicMaterial
           color="#00F0FF"
           transparent
@@ -125,10 +125,10 @@ function SphereCore({ isHovered }: SphereCoreProps) {
           side={THREE.BackSide}
         />
       </mesh>
-      
+
       {/* Outer glow (purple) */}
       <mesh scale={1.3}>
-        <sphereGeometry args={[2.5, 32, 32]} />
+        <sphereGeometry args={[2.5, 16, 16]} />
         <meshBasicMaterial
           color="#B829F7"
           transparent
@@ -144,7 +144,7 @@ function SphereCore({ isHovered }: SphereCoreProps) {
           <bufferAttribute
             attach="attributes-position"
             args={[particlePositions, 3]}
-            count={150}
+            count={80}
             array={particlePositions}
             itemSize={3}
           />
@@ -162,7 +162,7 @@ function SphereCore({ isHovered }: SphereCoreProps) {
       {/* Ring system */}
       <group rotation={[Math.PI / 2, 0, 0]}>
         <mesh>
-          <torusGeometry args={[3.5, 0.02, 16, 100]} />
+          <torusGeometry args={[3.5, 0.02, 16, 64]} />
           <meshBasicMaterial
             color="#00F0FF"
             transparent
@@ -174,7 +174,7 @@ function SphereCore({ isHovered }: SphereCoreProps) {
       
       <group rotation={[Math.PI / 3, Math.PI / 4, 0]}>
         <mesh>
-          <torusGeometry args={[4, 0.015, 16, 100]} />
+          <torusGeometry args={[4, 0.015, 16, 64]} />
           <meshBasicMaterial
             color="#B829F7"
             transparent
@@ -185,8 +185,8 @@ function SphereCore({ isHovered }: SphereCoreProps) {
       </group>
       
       {/* Floating data points */}
-      {Array.from({ length: 8 }).map((_, i) => {
-        const angle = (i / 8) * Math.PI * 2;
+      {Array.from({ length: 4 }).map((_, i) => {
+        const angle = (i / 4) * Math.PI * 2;
         const radius = 4.5;
         const x = Math.cos(angle) * radius;
         const z = Math.sin(angle) * radius;
@@ -251,9 +251,9 @@ export default function InteractiveSphere() {
     >
       <Canvas
         camera={{ position: [0, 0, 10], fov: 50 }}
-        dpr={[1, 2]}
-        gl={{ 
-          antialias: true, 
+        dpr={[1, 1.5]}
+        gl={{
+          antialias: false,
           alpha: true,
           powerPreference: 'high-performance'
         }}

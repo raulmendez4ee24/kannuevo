@@ -71,7 +71,7 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
   const session = await prisma.session.findUnique({ where: { tokenHash } });
   if (!session) return res.status(401).json({ error: 'UNAUTHENTICATED' });
   if (session.expiresAt.getTime() <= Date.now()) {
-    await prisma.session.delete({ where: { id: session.id } }).catch(() => {});
+    await prisma.session.delete({ where: { id: session.id } }).catch((err) => { console.warn('Failed to delete expired session:', session.id, err); });
     return res.status(401).json({ error: 'SESSION_EXPIRED' });
   }
 

@@ -59,13 +59,14 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
   } catch {
     // ignore
   }
-  const code = payload && typeof payload === 'object' && 'error' in payload ? String((payload as any).error) : `HTTP_${res.status}`;
+  const code = payload && typeof payload === 'object' && 'error' in payload ? String((payload as Record<string, unknown>).error) : `HTTP_${res.status}`;
   const message =
     code === 'INVALID_CREDENTIALS' ? 'Credenciales inválidas' :
     code === 'INVALID_OTP' ? 'Código OTP inválido' :
     code === 'EMAIL_IN_USE' ? 'El email ya está registrado' :
     code === 'INVALID_RESET_TOKEN' ? 'Token inválido o expirado' :
     code === 'NO_ORG_ACCESS' ? 'No tienes acceso a esta organización' :
+    code === 'TOO_MANY_REQUESTS' ? 'Demasiados intentos. Espera unos minutos.' :
     'Error de servidor';
   throw new Error(message);
 }

@@ -23,9 +23,72 @@ import { sseAddClient, sseBroadcast, ssePing, sseRemoveClient } from './realtime
 import { permissionsForRoles } from './permissions.js';
 import { sendContactEmail, sendAuditEmail, sendPaymentNotification } from './email.js';
 import { createAuditLogSafe, getClientIp, inferSeverityFromStatus } from './audit.js';
+import { rateLimit } from './rateLimit.js';
+import { stripe, isStripeEnabled } from './stripe.js';
 
 const app = express();
+
+// Rate limiters for auth endpoints
+const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 10, name: 'auth' });
+const otpLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 5, name: 'otp' });
 app.set('trust proxy', 1);
+
+// Stripe webhook needs raw body for signature verification — must be BEFORE express.json()
+app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+  if (!isStripeEnabled() || !stripe) {
+    return res.status(400).json({ error: 'STRIPE_NOT_CONFIGURED' });
+  }
+  const sig = req.headers['stripe-signature'] as string | undefined;
+  if (!sig) {
+    return res.status(400).json({ error: 'MISSING_SIGNATURE' });
+  }
+  try {
+    const webhookSecret = env.STRIPE_WEBHOOK_SECRET;
+    let event;
+    if (webhookSecret) {
+      event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
+    } else {
+      // Without webhook secret, parse but log warning
+      console.warn('[STRIPE] No STRIPE_WEBHOOK_SECRET set — skipping signature verification');
+      event = JSON.parse(req.body.toString());
+    }
+
+    if (event.type === 'checkout.session.completed') {
+      const session = event.data.object;
+      const paymentId = session.metadata?.paymentId;
+      if (paymentId) {
+        await prisma.payment.updateMany({
+          where: { paymentId },
+          data: {
+            status: 'completed',
+            processedAt: new Date(),
+            notes: `Stripe session: ${session.id}`,
+          },
+        });
+        console.log('[STRIPE] Payment completed via webhook:', paymentId);
+        await createAuditLogSafe({
+          organizationId: session.metadata?.organizationId || null,
+          action: 'PAYMENT_COMPLETED',
+          resource: 'payment',
+          resourceId: paymentId,
+          req,
+          severity: 'medium',
+          details: {
+            stripeSessionId: session.id,
+            amountTotal: session.amount_total,
+            currency: session.currency,
+            customerEmail: session.customer_email,
+          },
+        });
+      }
+    }
+
+    res.json({ received: true });
+  } catch (err) {
+    console.error('[STRIPE] Webhook error:', err);
+    res.status(400).json({ error: 'WEBHOOK_ERROR' });
+  }
+});
 
 app.use(express.json({ limit: '2mb' }));
 app.use(cookieParser());
@@ -106,7 +169,7 @@ app.get('/api/auth/me', requireAuth, async (req, res) => {
   });
 });
 
-app.post('/api/auth/register', async (req, res) => {
+app.post('/api/auth/register', authLimiter, async (req, res) => {
   const schema = z.object({
     email: z.string().email(),
     password: z.string().min(8),
@@ -134,7 +197,7 @@ app.post('/api/auth/register', async (req, res) => {
   res.json({ ok: true });
 });
 
-app.post('/api/auth/login', async (req, res) => {
+app.post('/api/auth/login', authLimiter, async (req, res) => {
   const schema = z.object({ email: z.string().email(), password: z.string().min(1) });
   const body = schema.parse(req.body);
   const email = body.email.toLowerCase();
@@ -156,7 +219,7 @@ app.post('/api/auth/login', async (req, res) => {
   res.json({ ok: true });
 });
 
-app.post('/api/auth/login/otp/start', async (req, res) => {
+app.post('/api/auth/login/otp/start', otpLimiter, async (req, res) => {
   const schema = z.object({ email: z.string().email() });
   const body = schema.parse(req.body);
   const email = body.email.toLowerCase();
@@ -176,11 +239,11 @@ app.post('/api/auth/login/otp/start', async (req, res) => {
   });
 
   // Demo: in production send email/SMS
-  console.log(`[OTP] ${email} -> ${code}`);
+  console.log(`[OTP] code sent to ${email.replace(/(.{2}).*(@.*)/, '$1***$2')}`);
   res.json({ ok: true });
 });
 
-app.post('/api/auth/login/otp/verify', async (req, res) => {
+app.post('/api/auth/login/otp/verify', otpLimiter, async (req, res) => {
   const schema = z.object({ email: z.string().email(), code: z.string().length(6) });
   const body = schema.parse(req.body);
   const email = body.email.toLowerCase();
@@ -216,12 +279,12 @@ app.post('/api/auth/login/otp/verify', async (req, res) => {
 
 app.post('/api/auth/logout', async (req, res) => {
   const token = req.cookies?.[SESSION_COOKIE_NAME];
-  if (token && typeof token === 'string') await destroySession(token).catch(() => {});
+  if (token && typeof token === 'string') await destroySession(token).catch((err) => { console.warn('Failed to destroy session on logout:', err); });
   clearSessionCookie(res);
   res.json({ ok: true });
 });
 
-app.post('/api/auth/password/forgot', async (req, res) => {
+app.post('/api/auth/password/forgot', authLimiter, async (req, res) => {
   const schema = z.object({ email: z.string().email() });
   const body = schema.parse(req.body);
   const email = body.email.toLowerCase();
@@ -238,7 +301,7 @@ app.post('/api/auth/password/forgot', async (req, res) => {
     },
   });
 
-  console.log(`[RESET] ${email} -> token=${token}`);
+  console.log(`[RESET] token generated for ${email.replace(/(.{2}).*(@.*)/, '$1***$2')}`);
   res.json({ ok: true });
 });
 
@@ -1192,6 +1255,106 @@ app.post('/api/audit', async (req, res) => {
   }
 });
 
+// ---- Stripe Checkout API ----
+
+app.post('/api/stripe/create-checkout-session', async (req, res) => {
+  if (!isStripeEnabled() || !stripe) {
+    return res.status(400).json({ error: 'STRIPE_NOT_CONFIGURED' });
+  }
+
+  const schema = z.object({
+    planId: z.string(),
+    planName: z.string(),
+    amount: z.number().int().positive().max(100_000_000), // cents MXN
+    customerEmail: z.string().email(),
+    organizationId: z.string().optional(),
+  });
+
+  const parsed = schema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'INVALID_REQUEST', details: parsed.error.flatten() });
+  }
+  const { planId, planName, amount, customerEmail, organizationId } = parsed.data;
+
+  try {
+    const paymentId = `pay_${randomToken(16)}`;
+
+    // Create payment record as pending
+    await prisma.payment.create({
+      data: {
+        organizationId: organizationId || null,
+        paymentId,
+        amount,
+        currency: 'mxn',
+        status: 'pending',
+        planId,
+        planName,
+        customerEmail,
+        encryptedData: '', // No card data — Stripe handles it
+        metadata: {
+          ip: getClientIp(req),
+          userAgent: req.get('user-agent') || 'unknown',
+          paymentMethod: 'stripe_checkout',
+        } as any,
+      },
+    });
+
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      mode: 'payment',
+      customer_email: customerEmail,
+      line_items: [
+        {
+          price_data: {
+            currency: 'mxn',
+            product_data: {
+              name: `Plan ${planName}`,
+              description: `Empleado Digital – Plan ${planName} (mensualidad)`,
+            },
+            unit_amount: amount, // already in cents
+          },
+          quantity: 1,
+        },
+      ],
+      metadata: {
+        paymentId,
+        planId,
+        planName,
+        organizationId: organizationId || '',
+      },
+      success_url: `${env.APP_ORIGIN}/#/dashboard?checkout=success&paymentId=${paymentId}`,
+      cancel_url: `${env.APP_ORIGIN}/#/dashboard?checkout=cancel`,
+    });
+
+    await createAuditLogSafe({
+      organizationId: organizationId || null,
+      action: 'STRIPE_CHECKOUT_CREATED',
+      resource: 'payment',
+      resourceId: paymentId,
+      req,
+      severity: 'medium',
+      details: {
+        stripeSessionId: session.id,
+        amount,
+        currency: 'mxn',
+        customerEmail,
+        planId,
+      },
+    });
+
+    console.log('[STRIPE] Checkout session created:', session.id, 'paymentId:', paymentId);
+    res.json({ url: session.url, sessionId: session.id, paymentId });
+  } catch (error) {
+    console.error('[STRIPE] Error creating checkout session:', error);
+    res.status(500).json({ error: 'STRIPE_CHECKOUT_FAILED' });
+  }
+});
+
+// Check if Stripe is available
+app.get('/api/stripe/status', (_req, res) => {
+  res.json({ enabled: isStripeEnabled() });
+});
+
 // ---- Payment API (Sistema Encriptado Propio) ----
 
 app.post('/api/payment/process', async (req, res) => {
@@ -1369,8 +1532,6 @@ app.get('/api/payment/:paymentId', requireAuth, async (req, res) => {
     res.status(500).json({ error: 'FAILED_TO_FETCH_PAYMENT' });
   }
 });
-
-// Webhook de Stripe removido - ahora usamos sistema propio encriptado
 
 // ---- Serve Web (optional) ----
 const webDistDir = process.env.WEB_DIST_DIR

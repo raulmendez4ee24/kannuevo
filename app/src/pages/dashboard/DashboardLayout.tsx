@@ -57,10 +57,15 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     });
 
     // Initial data load
-    api.getDashboardOverview().then(data => {
-      setSystemStatus(data.systemStatus);
-      setNotifications(data.recentActivity);
-    });
+    api.getDashboardOverview()
+      .then(data => {
+        setSystemStatus(data.systemStatus);
+        setNotifications(data.recentActivity);
+      })
+      .catch((err) => {
+        console.warn('Dashboard initial load failed:', err);
+        setSystemStatus('warning');
+      });
 
     return unsubscribe;
   }, []);

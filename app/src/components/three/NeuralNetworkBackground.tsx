@@ -1,4 +1,4 @@
-import { useRef, useMemo } from 'react';
+import { useRef, useMemo, useEffect } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 
@@ -15,7 +15,7 @@ function NeuralNetwork() {
   useThree(); // Initialize Three.js context
 
   // Configuration
-  const NODE_COUNT = 80;
+  const NODE_COUNT = 50;
   const CONNECTION_DISTANCE = 3.5;
   const MAX_CONNECTIONS = 3;
 
@@ -54,7 +54,7 @@ function NeuralNetwork() {
   }, []);
 
   // Mouse tracking
-  useMemo(() => {
+  useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       mouseRef.current.x = (e.clientX / window.innerWidth) * 2 - 1;
       mouseRef.current.y = -(e.clientY / window.innerHeight) * 2 + 1;
@@ -178,15 +178,15 @@ function ParticleField() {
   const pointsRef = useRef<THREE.Points>(null);
   
   const particles = useMemo(() => {
-    const count = 200;
+    const count = 100;
     const positions = new Float32Array(count * 3);
-    
+
     for (let i = 0; i < count; i++) {
       positions[i * 3] = (Math.random() - 0.5) * 25;
       positions[i * 3 + 1] = (Math.random() - 0.5) * 20;
       positions[i * 3 + 2] = (Math.random() - 0.5) * 15;
     }
-    
+
     return positions;
   }, []);
 
@@ -202,7 +202,7 @@ function ParticleField() {
         <bufferAttribute
           attach="attributes-position"
           args={[particles, 3]}
-          count={200}
+          count={100}
           array={particles}
           itemSize={3}
         />
@@ -224,9 +224,9 @@ export default function NeuralNetworkBackground() {
     <div className="fixed inset-0 -z-10">
       <Canvas
         camera={{ position: [0, 0, 12], fov: 60 }}
-        dpr={[1, 2]}
-        gl={{ 
-          antialias: true, 
+        dpr={[1, 1.5]}
+        gl={{
+          antialias: false,
           alpha: true,
           powerPreference: 'high-performance'
         }}

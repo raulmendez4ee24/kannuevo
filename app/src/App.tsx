@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { HashRouter, Routes, Route, Navigate, useLocation, Link } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { AnimatePresence, motion } from 'framer-motion';
+import ErrorBoundary from './components/ErrorBoundary';
 
-// Landing Page Components
-import NeuralNetworkBackground from './components/three/NeuralNetworkBackground';
+// Landing Page Components (eagerly loaded - entry point)
 import HUD from './components/ui/HUD';
 import HeroSection from './sections/HeroSection';
 import DigitalWorkforceSection from './sections/DigitalWorkforceSection';
@@ -14,22 +14,25 @@ import AuditSection from './sections/AuditSection';
 import ContactSection from './sections/ContactSection';
 import Footer from './sections/Footer';
 
-// Auth Pages
-import Login from './pages/auth/Login';
-import Register from './pages/auth/Register';
-import ForgotPassword from './pages/auth/ForgotPassword';
-import ResetPassword from './pages/auth/ResetPassword';
+// Lazy-loaded: Heavy 3D component
+const NeuralNetworkBackground = lazy(() => import('./components/three/NeuralNetworkBackground'));
 
-// Dashboard
-import DashboardLayout from './pages/dashboard/DashboardLayout';
-import Overview from './pages/dashboard/Overview';
-import Automations from './pages/dashboard/Automations';
-import Tasks from './pages/dashboard/Tasks';
-import Integrations from './pages/dashboard/Integrations';
-import Security from './pages/dashboard/Security';
-import AdminClients from './pages/dashboard/admin/Clients';
-import AdminMetrics from './pages/dashboard/admin/Metrics';
-import AdminLogs from './pages/dashboard/admin/Logs';
+// Lazy-loaded: Auth Pages
+const Login = lazy(() => import('./pages/auth/Login'));
+const Register = lazy(() => import('./pages/auth/Register'));
+const ForgotPassword = lazy(() => import('./pages/auth/ForgotPassword'));
+const ResetPassword = lazy(() => import('./pages/auth/ResetPassword'));
+
+// Lazy-loaded: Dashboard
+const DashboardLayout = lazy(() => import('./pages/dashboard/DashboardLayout'));
+const Overview = lazy(() => import('./pages/dashboard/Overview'));
+const Automations = lazy(() => import('./pages/dashboard/Automations'));
+const Tasks = lazy(() => import('./pages/dashboard/Tasks'));
+const Integrations = lazy(() => import('./pages/dashboard/Integrations'));
+const Security = lazy(() => import('./pages/dashboard/Security'));
+const AdminClients = lazy(() => import('./pages/dashboard/admin/Clients'));
+const AdminMetrics = lazy(() => import('./pages/dashboard/admin/Metrics'));
+const AdminLogs = lazy(() => import('./pages/dashboard/admin/Logs'));
 
 // Landing Page Component
 function LandingPage() {
@@ -44,23 +47,29 @@ function LandingPage() {
   }, []);
 
   useEffect(() => {
+    let ticking = false;
     const handleScroll = () => {
-      const sections = ['hero', 'workforce', 'services', 'process', 'audit', 'contact'];
-      const sectionNames = ['INICIO', 'FUERZA LABORAL', 'SERVICIOS', 'PROCESO', 'AUDITORIA', 'CONTACTO'];
-      
-      for (let i = sections.length - 1; i >= 0; i--) {
-        const element = document.getElementById(sections[i]);
-        if (element) {
-          const rect = element.getBoundingClientRect();
-          if (rect.top <= window.innerHeight / 2) {
-            setCurrentSection(sectionNames[i]);
-            break;
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        const sections = ['hero', 'workforce', 'services', 'process', 'audit', 'contact'];
+        const sectionNames = ['INICIO', 'FUERZA LABORAL', 'SERVICIOS', 'PROCESO', 'AUDITORIA', 'CONTACTO'];
+
+        for (let i = sections.length - 1; i >= 0; i--) {
+          const element = document.getElementById(sections[i]);
+          if (element) {
+            const rect = element.getBoundingClientRect();
+            if (rect.top <= window.innerHeight / 2) {
+              setCurrentSection(sectionNames[i]);
+              break;
+            }
           }
         }
-      }
+        ticking = false;
+      });
     };
 
-    window.addEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
@@ -108,7 +117,9 @@ function LandingPage() {
 
   return (
     <div className="relative min-h-screen bg-void-black text-frost-white scrollbar-cyber">
-      <NeuralNetworkBackground />
+      <Suspense fallback={null}>
+        <NeuralNetworkBackground />
+      </Suspense>
       <HUD currentSection={currentSection} />
       <main className="relative z-10">
         <HeroSection />
@@ -348,11 +359,30 @@ function AppRoutes() {
   );
 }
 
+function LoadingSpinner() {
+  return (
+    <div className="min-h-screen bg-void-black flex items-center justify-center">
+      <div className="text-center">
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+          className="w-12 h-12 border-2 border-cyber-cyan border-t-transparent rounded-full mx-auto mb-4"
+        />
+        <p className="font-mono text-sm text-ghost-white">Cargando...</p>
+      </div>
+    </div>
+  );
+}
+
 function App() {
   return (
     <HashRouter>
       <AuthProvider>
-        <AppRoutes />
+        <ErrorBoundary>
+          <Suspense fallback={<LoadingSpinner />}>
+            <AppRoutes />
+          </Suspense>
+        </ErrorBoundary>
       </AuthProvider>
     </HashRouter>
   );

@@ -35,7 +35,11 @@ export default function Login() {
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         const code = data?.error ?? '';
-        throw new Error(code === 'INVALID_CREDENTIALS' ? 'Credenciales inválidas' : 'Error de servidor');
+        throw new Error(
+          code === 'INVALID_CREDENTIALS' ? 'Credenciales inválidas' :
+          code === 'TOO_MANY_REQUESTS' ? 'Demasiados intentos. Espera unos minutos.' :
+          'Error de servidor'
+        );
       }
       // Password OK → send OTP (2FA code to email)
       await requestLoginOTP(email);
@@ -276,13 +280,30 @@ export default function Login() {
                   </div>
                 </motion.button>
 
-                <button
-                  type="button"
-                  onClick={() => { setStep('credentials'); setOtp(''); setError(''); }}
-                  className="w-full text-xs text-ghost-white hover:text-frost-white transition-colors font-mono tracking-wider text-center"
-                >
-                  ← Volver
-                </button>
+                <div className="flex items-center justify-between">
+                  <button
+                    type="button"
+                    onClick={() => { setStep('credentials'); setOtp(''); setError(''); }}
+                    className="text-xs text-ghost-white hover:text-frost-white transition-colors font-mono tracking-wider"
+                  >
+                    ← Volver
+                  </button>
+                  <button
+                    type="button"
+                    disabled={isLoading}
+                    onClick={async () => {
+                      setError('');
+                      try {
+                        await requestLoginOTP(email);
+                      } catch {
+                        setError('Error al reenviar código');
+                      }
+                    }}
+                    className="text-xs text-ghost-white hover:text-cyber-cyan transition-colors font-mono tracking-wider"
+                  >
+                    Reenviar Código
+                  </button>
+                </div>
               </motion.form>
             )}
 

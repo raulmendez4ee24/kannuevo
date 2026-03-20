@@ -1,14 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../lib/api';
-import { 
-  MessageSquare, 
-  Users, 
-  Calendar, 
-  TrendingUp, 
-  Clock, 
+import {
+  MessageSquare,
+  Users,
+  Calendar,
+  TrendingUp,
+  Clock,
   Bot,
   CheckCircle2,
   AlertCircle,
@@ -18,7 +18,9 @@ import {
   Activity,
   Workflow,
   Terminal,
-  Plug
+  Plug,
+  RefreshCw,
+  Zap
 } from 'lucide-react';
 import SecureCheckout from '../../components/ui/SecureCheckout';
 import { PENDING_CHECKOUT_KEY } from '../../constants/plans';
@@ -33,22 +35,21 @@ const colorStyles: Record<ColorKey, string> = {
   amber: 'text-alert-amber bg-alert-amber/10 border-alert-amber/30',
 };
 
-function KPICard({ 
-  title, 
-  value, 
-  change, 
-  trend, 
+function KPICard({
+  title,
+  value,
+  change,
+  trend,
   icon: Icon,
   color = 'cyan'
-}: { 
-  title: string; 
-  value: string | number; 
-  change: number; 
+}: {
+  title: string;
+  value: string | number;
+  change: number;
   trend: 'up' | 'down';
-  icon: React.ElementType;
+  icon: React.ComponentType<{ className?: string }>;
   color?: ColorKey;
 }) {
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -57,7 +58,6 @@ function KPICard({
     >
       <div className="flex items-start justify-between mb-4">
         <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${colorStyles[color]}`}>
-          {/* @ts-expect-error - TypeScript strict template literal issue */}
           <Icon className="w-5 h-5" />
         </div>
         <div className={`flex items-center gap-1 text-sm ${trend === 'up' ? 'text-matrix-green' : 'text-error-crimson'}`}>
@@ -66,7 +66,14 @@ function KPICard({
         </div>
       </div>
       <p className="font-mono text-[10px] text-ghost-white tracking-wider mb-1">{title}</p>
-      <p className="font-display text-2xl font-bold text-frost-white">{value}</p>
+      <motion.p
+        key={String(value)}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="font-display text-2xl font-bold text-frost-white"
+      >
+        {value}
+      </motion.p>
     </motion.div>
   );
 }
@@ -108,17 +115,48 @@ function ActivityItem({ event }: { event: { id: string; type: string; title: str
 
 export default function Overview() {
   const { user } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [data, setData] = useState<DashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<{ id: string; name: string; price: string } | null>(null);
+  const [checkoutSuccess, setCheckoutSuccess] = useState(false);
+
+  // Handle Stripe checkout redirect
+  useEffect(() => {
+    const checkout = searchParams.get('checkout');
+    if (checkout === 'success') {
+      setCheckoutSuccess(true);
+      // Clean URL params
+      searchParams.delete('checkout');
+      searchParams.delete('paymentId');
+      setSearchParams(searchParams, { replace: true });
+      // Auto-dismiss after 8 seconds
+      const timer = setTimeout(() => setCheckoutSuccess(false), 8000);
+      return () => clearTimeout(timer);
+    }
+  }, [searchParams, setSearchParams]);
+
+  const loadData = useCallback(async () => {
+    try {
+      const result = await api.getDashboardOverview();
+      setData(result);
+      setError(null);
+      setLastUpdated(new Date());
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al cargar datos');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    api.getDashboardOverview().then(data => {
-      setData(data);
-      setIsLoading(false);
-    });
-  }, []);
+    loadData();
+    const interval = setInterval(loadData, 60_000);
+    return () => clearInterval(interval);
+  }, [loadData]);
 
   useEffect(() => {
     try {
@@ -129,8 +167,25 @@ export default function Overview() {
         setIsCheckoutOpen(true);
         sessionStorage.removeItem(PENDING_CHECKOUT_KEY);
       }
-    } catch (_) {}
+    } catch (err) {
+      console.warn('Failed to read pending checkout from sessionStorage:', err);
+    }
   }, []);
+
+  if (error && !data) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 gap-4">
+        <AlertCircle className="w-8 h-8 text-error-crimson" />
+        <p className="text-sm text-error-crimson">{error}</p>
+        <button
+          onClick={() => { setError(null); setIsLoading(true); loadData(); }}
+          className="px-4 py-2 text-sm text-cyber-cyan border border-cyber-cyan rounded-lg hover:bg-cyber-cyan/10 font-mono"
+        >
+          Reintentar
+        </button>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -142,14 +197,49 @@ export default function Overview() {
 
   return (
     <div>
+      {/* Stripe checkout success banner */}
+      {checkoutSuccess && (
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+          className="mb-6 p-4 bg-matrix-green/10 border border-matrix-green/30 rounded-xl flex items-center gap-3"
+        >
+          <CheckCircle2 className="w-6 h-6 text-matrix-green shrink-0" />
+          <div className="flex-1">
+            <p className="font-display text-sm font-semibold text-frost-white">Pago procesado exitosamente</p>
+            <p className="font-mono text-xs text-ghost-white/70">Tu pago fue recibido. Recibirás confirmación por email.</p>
+          </div>
+          <button onClick={() => setCheckoutSuccess(false)} className="p-1 text-ghost-white/50 hover:text-frost-white transition-colors">
+            <Zap className="w-4 h-4" />
+          </button>
+        </motion.div>
+      )}
+
       {/* Welcome */}
-      <div className="mb-8">
-        <h1 className="font-display text-3xl font-bold text-frost-white mb-2">
-          Bienvenido, {user?.name.split(' ')[0]}
-        </h1>
-        <p className="text-ghost-white">
-          Aquí está el resumen de tu sistema hoy
-        </p>
+      <div className="mb-8 flex items-start justify-between">
+        <div>
+          <h1 className="font-display text-3xl font-bold text-frost-white mb-2">
+            Bienvenido, {user?.name.split(' ')[0]}
+          </h1>
+          <p className="text-ghost-white">
+            Aquí está el resumen de tu sistema hoy
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          {lastUpdated && (
+            <span className="font-mono text-[10px] text-terminal-gray">
+              {lastUpdated.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+            </span>
+          )}
+          <button
+            onClick={loadData}
+            className="p-2 text-ghost-white hover:text-cyber-cyan transition-colors rounded-lg hover:bg-cyber-cyan/10"
+            title="Actualizar datos"
+          >
+            <RefreshCw className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
       {/* KPIs */}

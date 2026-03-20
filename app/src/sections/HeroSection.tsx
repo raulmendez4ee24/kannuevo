@@ -11,9 +11,9 @@ export default function HeroSection() {
   useEffect(() => {
     let index = 0;
     const interval = setInterval(() => {
-      if (index <= fullText.length) {
-        setTypedText(fullText.slice(0, index));
+      if (index < fullText.length) {
         index++;
+        setTypedText(fullText.slice(0, index));
       } else {
         clearInterval(interval);
       }

@@ -55,7 +55,7 @@ function IntegrationCard({
   onUpdateMeta: (id: string, patch: { appIconUrl?: string | null; privacyPolicyUrl?: string | null; userDataDeletionUrl?: string | null; category?: string | null }) => Promise<void>;
   isTesting: boolean;
 }) {
-  const Icon = (providerIcons[integration.provider] || providerIcons.default) as React.ElementType;
+  const Icon = (providerIcons[integration.provider] || providerIcons.default) as React.ComponentType<{ className?: string }>;
   const health = healthIndicators[integration.healthStatus];
   const isMeta = integration.provider === 'Meta';
 
@@ -98,7 +98,6 @@ function IntegrationCard({
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-matrix-green/10 rounded-lg flex items-center justify-center">
-            {/* @ts-expect-error - TypeScript strict template literal issue */}
             <Icon className="w-5 h-5 text-matrix-green" />
           </div>
           <div>

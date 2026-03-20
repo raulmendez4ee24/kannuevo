@@ -14,10 +14,16 @@ export default function HUD({ currentSection = 'INICIO' }: HUDProps) {
   const [cpuUsage, setCpuUsage] = useState(12);
 
   useEffect(() => {
+    let ticking = false;
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 50);
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        setIsScrolled(window.scrollY > 50);
+        ticking = false;
+      });
     };
-    window.addEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
@@ -28,7 +34,7 @@ export default function HUD({ currentSection = 'INICIO' }: HUDProps) {
         const change = (Math.random() - 0.5) * 10;
         return Math.max(5, Math.min(45, prev + change));
       });
-    }, 2000);
+    }, 5000);
     return () => clearInterval(interval);
   }, []);
 

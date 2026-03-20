@@ -159,7 +159,7 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
     // ignore
   }
 
-  const code = (errPayload && typeof errPayload === 'object' && 'error' in errPayload) ? String((errPayload as any).error) : `HTTP_${res.status}`;
+  const code = (errPayload && typeof errPayload === 'object' && 'error' in errPayload) ? String((errPayload as Record<string, unknown>).error) : `HTTP_${res.status}`;
   const message =
     code === 'INVALID_CREDENTIALS' ? 'Credenciales inválidas' :
     code === 'INVALID_OTP' ? 'Código OTP inválido' :
@@ -169,6 +169,7 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
     code === 'EMAIL_IN_USE' ? 'El email ya está registrado' :
     code === 'INVALID_RESET_TOKEN' ? 'Token inválido o expirado' :
     code === 'TASK_PAUSED' ? 'La misión está pausada' :
+    code === 'TOO_MANY_REQUESTS' ? 'Demasiados intentos. Espera unos minutos.' :
     'Error de servidor';
 
   throw new Error(message);
@@ -347,6 +348,24 @@ export const api = {
 
   async impersonate(userId: string | null, organizationId: string | null): Promise<void> {
     await requestJson('/api/admin/impersonate', { method: 'POST', body: JSON.stringify({ userId, organizationId }) });
+  },
+
+  // Stripe
+  async getStripeStatus(): Promise<{ enabled: boolean }> {
+    return requestJson('/api/stripe/status');
+  },
+
+  async createStripeCheckoutSession(data: {
+    planId: string;
+    planName: string;
+    amount: number;
+    customerEmail: string;
+    organizationId?: string;
+  }): Promise<{ url: string; sessionId: string; paymentId: string }> {
+    return requestJson('/api/stripe/create-checkout-session', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
   },
 
   // Real-time

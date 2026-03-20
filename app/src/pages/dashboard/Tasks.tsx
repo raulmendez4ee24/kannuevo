@@ -135,7 +135,7 @@ function TaskCard({
   isExpanded: boolean;
   onToggleExpand: () => void;
 }) {
-  const StatusIcon = (statusIcons[task.status as StatusKey] || Clock) as React.ElementType;
+  const StatusIcon = (statusIcons[task.status as StatusKey] || Clock) as React.ComponentType<{ className?: string }>;
 
   return (
     <motion.div
@@ -153,7 +153,6 @@ function TaskCard({
           <div>
             <h3 className="font-medium text-frost-white">{task.name}</h3>
             <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-[10px] font-mono border rounded ${statusColors[task.status as StatusKey] as string}`}>
-              {/* @ts-expect-error - TypeScript strict template literal issue */}
               <StatusIcon className="w-3 h-3" />
               {task.status.toUpperCase()}
             </span>
