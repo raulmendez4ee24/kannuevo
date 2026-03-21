@@ -114,6 +114,22 @@ module.exports = {
           "0%": { transform: "rotate(0deg)" },
           "100%": { transform: "rotate(360deg)" },
         },
+        "spin-reverse": {
+          "0%": { transform: "rotate(360deg)" },
+          "100%": { transform: "rotate(0deg)" },
+        },
+        "drift": {
+          "0%, 100%": { transform: "translate(0, 0)" },
+          "50%": { transform: "translate(30px, -20px)" },
+        },
+        "drift-reverse": {
+          "0%, 100%": { transform: "translate(0, 0)" },
+          "50%": { transform: "translate(-25px, 15px)" },
+        },
+        "pulse-slow": {
+          "0%, 100%": { opacity: "0.2", transform: "scale(1)" },
+          "50%": { opacity: "0.35", transform: "scale(1.05)" },
+        },
         "counter": {
           "0%": { transform: "translateY(0)" },
           "100%": { transform: "translateY(-100%)" },
@@ -129,6 +145,10 @@ module.exports = {
         "glitch": "glitch 2s infinite",
         "data-stream": "data-stream 1s linear infinite",
         "spin-slow": "spin-slow 20s linear infinite",
+        "spin-reverse": "spin-reverse 15s linear infinite",
+        "drift": "drift 12s ease-in-out infinite",
+        "drift-reverse": "drift-reverse 14s ease-in-out infinite",
+        "pulse-slow": "pulse-slow 4s ease-in-out infinite",
       },
       backgroundImage: {
         'gradient-cyber': 'linear-gradient(135deg, #00F0FF 0%, #B829F7 100%)',

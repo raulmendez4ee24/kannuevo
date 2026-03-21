@@ -1,4 +1,5 @@
 import { Cpu, Github, Linkedin, Twitter, Instagram } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { handleAnchorClick } from '../utils/scroll';
 
 export default function Footer() {
@@ -15,11 +16,6 @@ export default function Footer() {
       { label: 'FAQ', href: '#faq' },
       { label: 'Proceso', href: '#process' },
       { label: 'Contacto', href: '#contact' },
-    ],
-    legal: [
-      { label: 'Privacidad', href: '/legal/privacidad.html' },
-      { label: 'Terminos', href: '/legal/terminos.html' },
-      { label: 'Eliminacion de datos', href: '/legal/eliminacion-datos.html' },
     ],
   };
 
@@ -116,16 +112,21 @@ export default function Footer() {
               LEGAL
             </h4>
             <ul className="space-y-2">
-              {footerLinks.legal.map((link) => (
-                <li key={link.label}>
-                  <a
-                    href={link.href}
-                    className="text-sm text-ghost-white hover:text-cyber-cyan transition-colors"
-                  >
-                    {link.label}
-                  </a>
-                </li>
-              ))}
+              <li>
+                <Link to="/privacy" className="text-sm text-ghost-white hover:text-cyber-cyan transition-colors">
+                  Privacidad
+                </Link>
+              </li>
+              <li>
+                <Link to="/terms" className="text-sm text-ghost-white hover:text-cyber-cyan transition-colors">
+                  Terminos
+                </Link>
+              </li>
+              <li>
+                <Link to="/data-deletion" className="text-sm text-ghost-white hover:text-cyber-cyan transition-colors">
+                  Eliminacion de datos
+                </Link>
+              </li>
             </ul>
           </div>
         </div>

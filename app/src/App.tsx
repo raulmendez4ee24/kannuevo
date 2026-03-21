@@ -4,19 +4,19 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { AnimatePresence, motion } from 'framer-motion';
 import ErrorBoundary from './components/ErrorBoundary';
 
-// Landing Page Components (eagerly loaded - entry point)
+// Landing Page Components — eagerly loaded: header + hero (above fold)
 import HUD from './components/ui/HUD';
 import HeroSection from './sections/HeroSection';
-import DigitalWorkforceSection from './sections/DigitalWorkforceSection';
-import ServicesSection from './sections/ServicesSection';
-import ProcessSection from './sections/ProcessSection';
-import AuditSection from './sections/AuditSection';
-import FAQSection from './sections/FAQSection';
-import ContactSection from './sections/ContactSection';
-import Footer from './sections/Footer';
+import NeuralNetworkBackground from './components/three/NeuralNetworkBackground';
 
-// Lazy-loaded: Heavy 3D component
-const NeuralNetworkBackground = lazy(() => import('./components/three/NeuralNetworkBackground'));
+// Landing Page Sections — lazy-loaded (below fold)
+const ServicesSection = lazy(() => import('./sections/ServicesSection'));
+const DigitalWorkforceSection = lazy(() => import('./sections/DigitalWorkforceSection'));
+const ProcessSection = lazy(() => import('./sections/ProcessSection'));
+const AuditSection = lazy(() => import('./sections/AuditSection'));
+const FAQSection = lazy(() => import('./sections/FAQSection'));
+const ContactSection = lazy(() => import('./sections/ContactSection'));
+const Footer = lazy(() => import('./sections/Footer'));
 
 // Lazy-loaded: Auth Pages
 const Login = lazy(() => import('./pages/auth/Login'));
@@ -24,6 +24,11 @@ const Register = lazy(() => import('./pages/auth/Register'));
 const ForgotPassword = lazy(() => import('./pages/auth/ForgotPassword'));
 const ResetPassword = lazy(() => import('./pages/auth/ResetPassword'));
 const CatalogRedirect = lazy(() => import('./pages/CatalogRedirect'));
+
+// Lazy-loaded: Legal Pages
+const TermsPage = lazy(() => import('./pages/legal/TermsPage'));
+const PrivacyPage = lazy(() => import('./pages/legal/PrivacyPage'));
+const DataDeletionPage = lazy(() => import('./pages/legal/DataDeletionPage'));
 
 // Lazy-loaded: Dashboard
 const DashboardLayout = lazy(() => import('./pages/dashboard/DashboardLayout'));
@@ -85,6 +90,21 @@ const ROUTE_META: Record<string, { title: string; description: string; canonical
     description:
       'Habla con KAN Logic para automatizar ventas, atencion y operacion con chatbots, voz, agentes autonomos y paginas web.',
     canonical: 'https://www.kanlogicsistem.com/#/contact',
+  },
+  '/terms': {
+    title: 'KAN LOGIC | Terminos y Condiciones',
+    description: 'Terminos y condiciones de uso de los servicios de KAN Logic Systems.',
+    canonical: 'https://www.kanlogicsistem.com/#/terms',
+  },
+  '/privacy': {
+    title: 'KAN LOGIC | Politica de Privacidad',
+    description: 'Politica de privacidad y manejo de datos personales de KAN Logic Systems.',
+    canonical: 'https://www.kanlogicsistem.com/#/privacy',
+  },
+  '/data-deletion': {
+    title: 'KAN LOGIC | Eliminacion de Datos',
+    description: 'Solicita la eliminacion de tus datos personales almacenados por KAN Logic Systems.',
+    canonical: 'https://www.kanlogicsistem.com/#/data-deletion',
   },
   '/login': {
     title: 'KAN LOGIC | Iniciar Sesion',
@@ -213,7 +233,10 @@ function RouteMeta() {
   return null;
 }
 
-// Landing Page Component
+// Landing Page — stable component, not re-mounted between landing routes
+const LANDING_SECTIONS = ['hero', 'services', 'workforce', 'process', 'audit', 'faq', 'contact'];
+const LANDING_NAMES = ['INICIO', 'SOLUCIONES', 'FUERZA LABORAL', 'PROCESO', 'AUDITORIA', 'FAQ', 'CONTACTO'];
+
 function LandingPage() {
   const [currentSection, setCurrentSection] = useState('INICIO');
 
@@ -223,15 +246,12 @@ function LandingPage() {
       if (ticking) return;
       ticking = true;
       requestAnimationFrame(() => {
-        const sections = ['hero', 'services', 'workforce', 'process', 'audit', 'faq', 'contact'];
-        const sectionNames = ['INICIO', 'SOLUCIONES', 'FUERZA LABORAL', 'PROCESO', 'AUDITORIA', 'FAQ', 'CONTACTO'];
-
-        for (let i = sections.length - 1; i >= 0; i--) {
-          const element = document.getElementById(sections[i]);
+        for (let i = LANDING_SECTIONS.length - 1; i >= 0; i--) {
+          const element = document.getElementById(LANDING_SECTIONS[i]);
           if (element) {
             const rect = element.getBoundingClientRect();
             if (rect.top <= window.innerHeight / 2) {
-              setCurrentSection(sectionNames[i]);
+              setCurrentSection(LANDING_NAMES[i]);
               break;
             }
           }
@@ -246,20 +266,22 @@ function LandingPage() {
 
   return (
     <div className="relative min-h-screen bg-void-black text-frost-white scrollbar-cyber">
-      <Suspense fallback={null}>
-        <NeuralNetworkBackground />
-      </Suspense>
+      <NeuralNetworkBackground />
       <HUD currentSection={currentSection} />
       <main className="relative z-10">
         <HeroSection />
-        <ServicesSection />
-        <DigitalWorkforceSection />
-        <ProcessSection />
-        <AuditSection />
-        <FAQSection />
-        <ContactSection />
+        <Suspense fallback={null}>
+          <ServicesSection />
+          <DigitalWorkforceSection />
+          <ProcessSection />
+          <AuditSection />
+          <FAQSection />
+          <ContactSection />
+        </Suspense>
       </main>
-      <Footer />
+      <Suspense fallback={null}>
+        <Footer />
+      </Suspense>
     </div>
   );
 }
@@ -273,11 +295,7 @@ function ProtectedRoute({ children, permission }: { children: React.ReactNode; p
     return (
       <div className="min-h-screen bg-void-black flex items-center justify-center">
         <div className="text-center">
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
-            className="w-12 h-12 border-2 border-cyber-cyan border-t-transparent rounded-full mx-auto mb-4"
-          />
+          <div className="w-12 h-12 border-2 border-cyber-cyan border-t-transparent rounded-full mx-auto mb-4 animate-spin" />
           <p className="font-mono text-sm text-ghost-white">Cargando...</p>
         </div>
       </div>
@@ -292,8 +310,8 @@ function ProtectedRoute({ children, permission }: { children: React.ReactNode; p
     return (
       <div className="min-h-screen bg-void-black flex items-center justify-center">
         <div className="text-center">
-          <p className="font-mono text-sm text-error-crimson mb-2">⛔ ACCESO DENEGADO</p>
-          <p className="font-mono text-xs text-ghost-white">No tienes permiso para acceder a esta sección</p>
+          <p className="font-mono text-sm text-error-crimson mb-2">ACCESO DENEGADO</p>
+          <p className="font-mono text-xs text-ghost-white">No tienes permiso para acceder a esta seccion</p>
           <Link to="/dashboard" className="text-cyber-cyan hover:underline text-sm mt-4 inline-block">
             Volver al Dashboard
           </Link>
@@ -313,11 +331,7 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
     return (
       <div className="min-h-screen bg-void-black flex items-center justify-center">
         <div className="text-center">
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
-            className="w-12 h-12 border-2 border-cyber-cyan border-t-transparent rounded-full mx-auto mb-4"
-          />
+          <div className="w-12 h-12 border-2 border-cyber-cyan border-t-transparent rounded-full mx-auto mb-4 animate-spin" />
           <p className="font-mono text-sm text-ghost-white">Cargando...</p>
         </div>
       </div>
@@ -331,14 +345,19 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+// Determine if a path is a landing route (for stable key)
+const LANDING_PATHS = new Set(['/', '/hero', '/workforce', '/services', '/process', '/audit', '/faq', '/contact', '/express']);
+
 // App Routes
 function AppRoutes() {
   const location = useLocation();
+  // Use a stable key for all landing routes so LandingPage doesn't re-mount
+  const routeKey = LANDING_PATHS.has(location.pathname) ? 'landing' : location.pathname;
 
   return (
     <AnimatePresence mode="wait">
-      <Routes location={location} key={location.pathname}>
-        {/* Landing Page */}
+      <Routes location={location} key={routeKey}>
+        {/* Landing Page — single instance for all landing paths */}
         <Route path="/" element={<LandingPage />} />
         <Route path="/hero" element={<LandingPage />} />
         <Route path="/workforce" element={<LandingPage />} />
@@ -350,123 +369,28 @@ function AppRoutes() {
         <Route path="/express" element={<LandingPage />} />
         <Route path="/catalogo" element={<CatalogRedirect />} />
 
+        {/* Legal Pages (required for Meta) */}
+        <Route path="/terms" element={<TermsPage />} />
+        <Route path="/privacy" element={<PrivacyPage />} />
+        <Route path="/data-deletion" element={<DataDeletionPage />} />
+
         {/* Auth Routes */}
-        <Route
-          path="/login"
-          element={
-            <PublicRoute>
-              <Login />
-            </PublicRoute>
-          }
-        />
-        <Route
-          path="/register"
-          element={
-            <PublicRoute>
-              <Register />
-            </PublicRoute>
-          }
-        />
-        <Route
-          path="/forgot-password"
-          element={
-            <PublicRoute>
-              <ForgotPassword />
-            </PublicRoute>
-          }
-        />
-        <Route
-          path="/reset-password"
-          element={
-            <PublicRoute>
-              <ResetPassword />
-            </PublicRoute>
-          }
-        />
+        <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+        <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
+        <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
+        <Route path="/reset-password" element={<PublicRoute><ResetPassword /></PublicRoute>} />
 
         {/* Dashboard Routes */}
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <DashboardLayout>
-                <Overview />
-              </DashboardLayout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/dashboard/automations"
-          element={
-            <ProtectedRoute permission="automation:view">
-              <DashboardLayout>
-                <Automations />
-              </DashboardLayout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/dashboard/tasks"
-          element={
-            <ProtectedRoute permission="tasks:view">
-              <DashboardLayout>
-                <Tasks />
-              </DashboardLayout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/dashboard/integrations"
-          element={
-            <ProtectedRoute permission="integrations:view">
-              <DashboardLayout>
-                <Integrations />
-              </DashboardLayout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/dashboard/security"
-          element={
-            <ProtectedRoute permission="security:view">
-              <DashboardLayout>
-                <Security />
-              </DashboardLayout>
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/dashboard" element={<ProtectedRoute><DashboardLayout><Overview /></DashboardLayout></ProtectedRoute>} />
+        <Route path="/dashboard/automations" element={<ProtectedRoute permission="automation:view"><DashboardLayout><Automations /></DashboardLayout></ProtectedRoute>} />
+        <Route path="/dashboard/tasks" element={<ProtectedRoute permission="tasks:view"><DashboardLayout><Tasks /></DashboardLayout></ProtectedRoute>} />
+        <Route path="/dashboard/integrations" element={<ProtectedRoute permission="integrations:view"><DashboardLayout><Integrations /></DashboardLayout></ProtectedRoute>} />
+        <Route path="/dashboard/security" element={<ProtectedRoute permission="security:view"><DashboardLayout><Security /></DashboardLayout></ProtectedRoute>} />
 
         {/* Admin Routes */}
-        <Route
-          path="/dashboard/admin/clients"
-          element={
-            <ProtectedRoute permission="admin:clients">
-              <DashboardLayout>
-                <AdminClients />
-              </DashboardLayout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/dashboard/admin/metrics"
-          element={
-            <ProtectedRoute permission="admin:metrics">
-              <DashboardLayout>
-                <AdminMetrics />
-              </DashboardLayout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/dashboard/admin/logs"
-          element={
-            <ProtectedRoute permission="admin:logs">
-              <DashboardLayout>
-                <AdminLogs />
-              </DashboardLayout>
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/dashboard/admin/clients" element={<ProtectedRoute permission="admin:clients"><DashboardLayout><AdminClients /></DashboardLayout></ProtectedRoute>} />
+        <Route path="/dashboard/admin/metrics" element={<ProtectedRoute permission="admin:metrics"><DashboardLayout><AdminMetrics /></DashboardLayout></ProtectedRoute>} />
+        <Route path="/dashboard/admin/logs" element={<ProtectedRoute permission="admin:logs"><DashboardLayout><AdminLogs /></DashboardLayout></ProtectedRoute>} />
 
         {/* 404 */}
         <Route
@@ -475,7 +399,7 @@ function AppRoutes() {
             <div className="min-h-screen bg-void-black flex items-center justify-center">
               <div className="text-center">
                 <h1 className="text-6xl font-bold text-cyber-cyan font-display mb-4">404</h1>
-                <p className="text-ghost-white mb-6">Página no encontrada</p>
+                <p className="text-ghost-white mb-6">Pagina no encontrada</p>
                 <a
                   href="/"
                   className="inline-flex items-center gap-2 px-4 py-2 bg-cyber-cyan/10 border border-cyber-cyan text-cyber-cyan rounded-lg hover:bg-cyber-cyan/20 transition-colors"
@@ -495,11 +419,7 @@ function LoadingSpinner() {
   return (
     <div className="min-h-screen bg-void-black flex items-center justify-center">
       <div className="text-center">
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
-          className="w-12 h-12 border-2 border-cyber-cyan border-t-transparent rounded-full mx-auto mb-4"
-        />
+        <div className="w-12 h-12 border-2 border-cyber-cyan border-t-transparent rounded-full mx-auto mb-4 animate-spin" />
         <p className="font-mono text-sm text-ghost-white">Cargando...</p>
       </div>
     </div>
