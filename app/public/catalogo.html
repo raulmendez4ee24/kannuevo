@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CATALOGO DE SERVICIOS - KAN Logic</title>
+<meta name="description" content="Catalogo comercial de KAN Logic con paginas web, chatbots, agentes de voz, agentes autonomos, combos y add-ons en MXN.">
+<meta name="robots" content="index,follow">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="canonical" href="https://www.kanlogicsistem.com/catalogo.html">
+<link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600;700&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#07070a;--surface:#0d0d14;--surface2:#14141e;--surface3:#1a1a28;
+    --border:#1e1e32;--border-hover:#2e2e48;
+    --gold:#eab308;--gold-dim:#92711a;--green:#22c55e;--blue:#3b82f6;
+    --purple:#a855f7;--red:#ef4444;--orange:#f97316;--cyan:#06b6d4;
+    --whatsapp:#25d366;--voice:#f472b6;
+    --text:#e4e4ec;--dim:#8c8c97;--muted:#6b6b77;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:'Instrument Sans',sans-serif;line-height:1.65;}
+  a{text-decoration:none;color:inherit}
+  header{text-align:center;padding:48px 24px 32px;border-bottom:1px solid var(--border);}
+  .top-actions{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-bottom:18px}
+  .top-link{font-family:'Geist Mono',monospace;font-size:11px;padding:10px 14px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);transition:all .2s}
+  .top-link:hover{border-color:var(--gold);color:var(--gold)}
+  .badge{font-family:'Geist Mono',monospace;font-size:10px;letter-spacing:4px;text-transform:uppercase;color:var(--gold);border:1px solid var(--gold-dim);padding:5px 14px;border-radius:3px;display:inline-block;margin-bottom:16px;}
+  header h1{font-weight:700;font-size:clamp(24px,5vw,40px);margin-bottom:8px;}
+  header p{font-size:13px;color:var(--dim);max-width:760px;margin:0 auto;}
+  .contact-line{margin-top:12px;font-size:12px;color:var(--dim)}
+  .contact-line a{color:var(--gold)}
+  .catalog{max-width:1100px;margin:0 auto;padding:32px 20px 80px;}
+  .cat-section{margin-bottom:48px;}
+  .cat-header{display:flex;align-items:center;gap:14px;margin-bottom:20px;padding-bottom:14px;border-bottom:1px solid var(--border);}
+  .cat-title{font-weight:700;font-size:22px;}
+  .cat-subtitle{font-size:12px;color:var(--dim);}
+  .cat-color{width:4px;height:40px;border-radius:2px;flex-shrink:0;}
+  .services-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;}
+  .svc{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;transition:all .3s;position:relative;}
+  .svc:hover{border-color:var(--border-hover);transform:translateY(-3px);box-shadow:0 16px 50px rgba(0,0,0,.4);}
+  .svc-accent{height:4px;}
+  .svc-body{padding:22px 20px;}
+  .svc-tier{font-family:'Geist Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:8px;}
+  .svc-name{font-weight:700;font-size:17px;margin-bottom:4px;line-height:1.3;}
+  .svc-desc{font-size:12px;color:var(--dim);margin-bottom:14px;line-height:1.6;}
+  .svc-prices{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
+  .sp{padding:8px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;text-align:center;flex:1;min-width:100px;}
+  .sp-label{font-family:'Geist Mono',monospace;font-size:9px;color:var(--dim);letter-spacing:1px;margin-bottom:2px;}
+  .sp-amount{font-family:'Geist Mono',monospace;font-weight:700;font-size:16px;}
+  .sp-amount.green{color:var(--green);}
+  .sp-amount.wa{color:var(--whatsapp);}
+  .sp-sub{font-family:'Geist Mono',monospace;font-size:9px;color:var(--muted);}
+  .svc-includes{list-style:none;margin:0;padding:0;}
+  .svc-includes li{font-size:12px;color:var(--dim);padding:3px 0;display:flex;align-items:flex-start;gap:6px;line-height:1.5;}
+  .svc-includes li::before{content:'✓';color:var(--green);font-weight:700;flex-shrink:0;}
+  .svc-footer{padding:12px 20px;background:var(--surface2);border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+  .svc-time{font-family:'Geist Mono',monospace;font-size:10px;color:var(--dim);}
+  .svc-margin{font-family:'Geist Mono',monospace;font-size:10px;color:var(--gold-dim);}
+  .card-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+  .pay-link,.quote-link{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:10px 14px;border-radius:10px;border:1px solid var(--border);font-family:'Geist Mono',monospace;font-size:11px;letter-spacing:1px;text-transform:uppercase;transition:all .2s}
+  .pay-link{background:rgba(6,182,212,.08);border-color:rgba(6,182,212,.35);color:var(--cyan);flex:1}
+  .pay-link:hover{background:rgba(6,182,212,.14);border-color:var(--cyan)}
+  .quote-link{background:rgba(234,179,8,.05);border-color:rgba(234,179,8,.2);color:var(--gold);flex:1}
+  .quote-link:hover{background:rgba(234,179,8,.1);border-color:var(--gold)}
+  .combo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;}
+  .combo{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;transition:all .3s;}
+  .combo:hover{border-color:var(--border-hover);transform:translateY(-3px);}
+  .combo.featured{border-color:var(--gold-dim);}
+  .combo-top{height:5px;background:linear-gradient(90deg,var(--c1,var(--blue)),var(--c2,var(--whatsapp)));}
+  .combo-body{padding:22px 20px;}
+  .combo-badge{font-family:'Geist Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;}
+  .combo-name{font-weight:700;font-size:18px;margin-bottom:4px;line-height:1.3;}
+  .combo-formula{font-family:'Geist Mono',monospace;font-size:11px;color:var(--dim);margin-bottom:14px;}
+  .combo-save{display:inline-block;font-family:'Geist Mono',monospace;font-size:10px;padding:3px 10px;border-radius:3px;margin-bottom:14px;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2);color:var(--green);}
+  .addons-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;}
+  .addon{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 14px;transition:all .3s;}
+  .addon:hover{border-color:var(--border-hover);}
+  .addon-name{font-weight:600;font-size:14px;margin-bottom:4px;}
+  .addon-price{font-family:'Geist Mono',monospace;font-size:13px;color:var(--green);margin-bottom:6px;}
+  .addon-desc{font-size:11px;color:var(--dim);line-height:1.6;}
+  .summary{width:100%;border-collapse:collapse;margin:20px 0;font-size:13px;}
+  .summary th{font-family:'Geist Mono',monospace;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--dim);text-align:left;padding:10px 12px;border-bottom:2px solid var(--border);}
+  .summary td{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.03);color:var(--dim);}
+  .summary td:first-child{color:var(--text);font-weight:500;}
+  .summary .price{font-family:'Geist Mono',monospace;font-weight:600;color:var(--green);}
+  .summary .recur{font-family:'Geist Mono',monospace;font-weight:600;color:var(--whatsapp);}
+  .alert{padding:14px 16px;border-radius:8px;margin:16px 0;font-size:12px;line-height:1.7;}
+  .alert.gold{background:rgba(234,179,8,.04);border:1px solid rgba(234,179,8,.15);color:var(--gold);}
+  .alert.green{background:rgba(34,197,94,.04);border:1px solid rgba(34,197,94,.15);color:var(--green);}
+  .alert strong{color:inherit;}
+  .divider{height:1px;background:var(--border);margin:40px 0;}
+  .hidden{display:none!important;}
+  @media(max-width:600px){
+    .services-grid,.combo-grid,.addons-grid{grid-template-columns:1fr;}
+    .summary{font-size:11px;}
+    .summary th,.summary td{padding:8px 6px;}
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="top-actions">
+    <a class="top-link" href="/">Volver al sitio</a>
+    <a class="top-link" href="mailto:mendez@kanlogic.lat">mendez@kanlogic.lat</a>
+  </div>
+  <div class="badge">Tu catalogo completo</div>
+  <h1>Todo Lo Que Vendes</h1>
+  <p>4 servicios individuales + 4 combos + 5 add-ons. Precios en MXN. Lo que incluye cada uno, cuanto tiempo toma y como se acomoda tu oferta comercial.</p>
+  <div class="contact-line">Contacto directo: <a href="mailto:mendez@kanlogic.lat">mendez@kanlogic.lat</a></div>
+</header>
+<main class="catalog">
+<div class="cat-section">
+  <div class="cat-header">
+    <div class="cat-color" style="background:var(--blue);"></div>
+    <div>
+      <div class="cat-title">Paginas Web</div>
+      <div class="cat-subtitle">Servicio #1 - Presencia online profesional</div>
+    </div>
+  </div>
+  <div class="services-grid">
+    <div class="svc">
+      <div class="svc-accent" style="background:var(--blue);"></div>
+      <div class="svc-body">
+        <div class="svc-tier">Web Basica</div>
+        <div class="svc-name">Landing Page</div>
+        <div class="svc-desc">Una sola pagina con scroll. Perfecta para negocios que necesitan presencia rapida en Google.</div>
+        <div class="svc-prices">
+          <div class="sp"><div class="sp-label">SETUP</div><div class="sp-amount green mxn-price">$3,000</div><div class="sp-amount green usd-price hidden">$500</div><div class="sp-sub mxn-curr">MXN</div><div class="sp-sub usd-curr hidden">USD</div></div>
+          <div class="sp"><div class="sp-label">MENSUAL</div><div class="sp-amount" style="color:var(--muted);">-</div><div class="sp-sub">Pago unico</div></div>
+        </div>
+        <ul class="svc-includes">
+          <li>Diseno moderno responsive</li><li>Hero section con CTA</li><li>Seccion de servicios</li><li>Formulario de contacto</li><li>Boton flotante de WhatsApp</li><li>Google Maps integrado</li><li>SEO basico</li>
+        </ul>
+      </div>
+      <div class="svc-footer"><div class="svc-time">Entrega: 2-3 dias</div><div class="svc-margin">Tu costo: ~$100 MXN</div></div>
+    </div>
+    <div class="svc">
+      <div class="svc-accent" style="background:var(--blue);"></div>
+      <div class="svc-body">
+        <div class="svc-tier">Web Profesional</div>
+        <div class="svc-name">Sitio Web Completo</div>
+        <div class="svc-desc">Multiples paginas con diseno personalizado. Para negocios que quieren verse serios en internet.</div>
+        <div class="svc-prices">
+          <div class="sp"><div class="sp-label">SETUP</div><div class="sp-amount green mxn-price">$6,000</div><div class="sp-amount green usd-price hidden">$1,500</div><div class="sp-sub mxn-curr">MXN</div><div class="sp-sub usd-curr hidden">USD</div></div>
+          <div class="sp"><div class="sp-label">MENSUAL</div><div class="sp-amount" style="color:var(--muted);">-</div><div class="sp-sub">Pago unico</div></div>
+        </div>
+        <ul class="svc-includes">
+          <li>3-5 paginas</li><li>Diseno personalizado</li><li>Galeria de fotos</li><li>Blog listo</li><li>SEO optimizado</li><li>Analytics instalado</li><li>WhatsApp + formularios</li><li>2 rondas de revisiones</li>
+        </ul>
+      </div>
+      <div class="svc-footer"><div class="svc-time">Entrega: 4-6 dias</div><div class="svc-margin">Tu costo: ~$200 MXN</div></div>
+    </div>
+    <div class="svc">
+      <div class="svc-accent" style="background:var(--blue);"></div>
+      <div class="svc-body">
+        <div class="svc-tier">Web Premium</div>
+        <div class="svc-name">Sitio + Tienda / Plataforma</div>
+        <div class="svc-desc">E-commerce, sistema de citas o funcionalidades avanzadas. Para negocios que venden en linea.</div>
+        <div class="svc-prices">
+          <div class="sp"><div class="sp-label">SETUP</div><div class="sp-amount green mxn-price">$12,000</div><div class="sp-amount green usd-price hidden">$3,000</div><div class="sp-sub mxn-curr">MXN</div><div class="sp-sub usd-curr hidden">USD</div></div>
+          <div class="sp"><div class="sp-label">MENSUAL</div><div class="sp-amount" style="color:var(--muted);">-</div><div class="sp-sub">Pago unico</div></div>
+        </div>
+        <ul class="svc-includes">
+          <li>Todo lo del Profesional</li><li>Tienda online con carrito</li><li>O sistema de reservaciones</li><li>Integracion de pagos</li><li>Panel administrativo</li><li>Copywriting incluido</li><li>Revisiones ilimitadas</li><li>Soporte 30 dias</li>
+        </ul>
+      </div>
+      <div class="svc-footer"><div class="svc-time">Entrega: 7-10 dias</div><div class="svc-margin">Tu costo: ~$400 MXN</div></div>
+    </div>
+  </div>
+</main>
+<div class="cat-section">
+  <div class="cat-header">
+    <div class="cat-color" style="background:var(--whatsapp);"></div>
+    <div><div class="cat-title">Chatbots de WhatsApp</div><div class="cat-subtitle">Servicio #2 - Atencion automatica por texto 24/7</div></div>
+  </div>
+  <div class="services-grid">
+    <div class="svc"><div class="svc-accent" style="background:var(--whatsapp);"></div><div class="svc-body"><div class="svc-tier">Bot Basico</div><div class="svc-name">FAQ + Catalogo Automatico</div><div class="svc-desc">Responde preguntas frecuentes y muestra menu/catalogo.</div><div class="svc-prices"><div class="sp"><div class="sp-label">SETUP</div><div class="sp-amount green mxn-price">$3,500</div><div class="sp-amount green usd-price hidden">$500</div><div class="sp-sub mxn-curr">MXN</div><div class="sp-sub usd-curr hidden">USD</div></div><div class="sp"><div class="sp-label">MENSUAL</div><div class="sp-amount wa mxn-price">$800</div><div class="sp-amount wa usd-price hidden">$150</div><div class="sp-sub mxn-curr">MXN/mes</div><div class="sp-sub usd-curr hidden">USD/mes</div></div></div><ul class="svc-includes"><li>20+ preguntas frecuentes</li><li>Menu digital por WhatsApp</li><li>Horarios, ubicacion y precios automaticos</li><li>Respuestas 24/7</li><li>Traspaso a humano</li><li>Configuracion + capacitacion</li></ul></div><div class="svc-footer"><div class="svc-time">Setup: 1-2 dias</div><div class="svc-margin">Tu costo: ~$50 MXN/mes</div></div></div>
+    <div class="svc"><div class="svc-accent" style="background:var(--whatsapp);"></div><div class="svc-body"><div class="svc-tier">Bot Inteligente</div><div class="svc-name">IA Conversacional + Citas/Pedidos</div><div class="svc-desc">Habla como humano, agenda citas, toma pedidos y hace seguimiento.</div><div class="svc-prices"><div class="sp"><div class="sp-label">SETUP</div><div class="sp-amount green mxn-price">$6,000</div><div class="sp-amount green usd-price hidden">$1,000</div><div class="sp-sub mxn-curr">MXN</div><div class="sp-sub usd-curr hidden">USD</div></div><div class="sp"><div class="sp-label">MENSUAL</div><div class="sp-amount wa mxn-price">$1,500</div><div class="sp-amount wa usd-price hidden">$300</div><div class="sp-sub mxn-curr">MXN/mes</div><div class="sp-sub usd-curr hidden">USD/mes</div></div></div><ul class="svc-includes"><li>Todo lo del Bot Basico</li><li>IA conversacional</li><li>Sistema de citas</li><li>Pedidos con calculo de total</li><li>Recordatorios automaticos</li><li>Seguimiento post-servicio</li><li>Solicitud de resenas</li><li>Dashboard de conversaciones</li></ul></div><div class="svc-footer"><div class="svc-time">Setup: 2-3 dias</div><div class="svc-margin">Tu costo: ~$100 MXN/mes</div></div></div>
+    <div class="svc"><div class="svc-accent" style="background:var(--whatsapp);"></div><div class="svc-body"><div class="svc-tier">Bot Multicanal</div><div class="svc-name">WhatsApp + Instagram + Facebook</div><div class="svc-desc">El mismo bot inteligente funcionando en todos los canales.</div><div class="svc-prices"><div class="sp"><div class="sp-label">SETUP</div><div class="sp-amount green mxn-price">$10,000</div><div class="sp-amount green usd-price hidden">$1,500</div><div class="sp-sub mxn-curr">MXN</div><div class="sp-sub usd-curr hidden">USD</div></div><div class="sp"><div class="sp-label">MENSUAL</div><div class="sp-amount wa mxn-price">$2,500</div><div class="sp-amount wa usd-price hidden">$400</div><div class="sp-sub mxn-curr">MXN/mes</div><div class="sp-sub usd-curr hidden">USD/mes</div></div></div><ul class="svc-includes"><li>Todo lo del Bot Inteligente</li><li>WhatsApp + Instagram DM + Facebook Messenger</li><li>Mismo flujo en todos los canales</li><li>CRM integrado</li><li>Campanas masivas</li><li>Reportes mensuales</li></ul></div><div class="svc-footer"><div class="svc-time">Setup: 3-5 dias</div><div class="svc-margin">Tu costo: ~$200 MXN/mes</div></div></div>
+  </div>
+</div>
+<div class="cat-section">
+  <div class="cat-header">
+    <div class="cat-color" style="background:var(--voice);"></div>
+    <div><div class="cat-title">Agentes de Voz</div><div class="cat-subtitle">Servicio #3 - Asistente telefonico con IA</div></div>
+  </div>
+  <div class="services-grid">
+    <div class="svc"><div class="svc-accent" style="background:var(--voice);"></div><div class="svc-body"><div class="svc-tier">Voz Basico</div><div class="svc-name">Recepcionista Virtual</div><div class="svc-desc">Contesta llamadas, responde preguntas frecuentes y transfiere a humano.</div><div class="svc-prices"><div class="sp"><div class="sp-label">SETUP</div><div class="sp-amount green mxn-price">$5,000</div><div class="sp-amount green usd-price hidden">$800</div><div class="sp-sub mxn-curr">MXN</div><div class="sp-sub usd-curr hidden">USD</div></div><div class="sp"><div class="sp-label">MENSUAL</div><div class="sp-amount wa mxn-price">$1,500</div><div class="sp-amount wa usd-price hidden">$250</div><div class="sp-sub mxn-curr">MXN/mes</div><div class="sp-sub usd-curr hidden">USD/mes</div></div></div><ul class="svc-includes"><li>Voz natural en espanol</li><li>Preguntas frecuentes por telefono</li><li>Horarios, precios y ubicacion</li><li>Transfiere a humano</li><li>Funciona 24/7</li><li>Numero dedicado</li></ul></div><div class="svc-footer"><div class="svc-time">Setup: 2-3 dias</div><div class="svc-margin">Tu costo: ~$700 MXN/mes</div></div></div>
+    <div class="svc"><div class="svc-accent" style="background:var(--voice);"></div><div class="svc-body"><div class="svc-tier">Voz Pro</div><div class="svc-name">Agente Inteligente + Agenda</div><div class="svc-desc">Agenda citas, califica prospectos y envia confirmacion por WhatsApp.</div><div class="svc-prices"><div class="sp"><div class="sp-label">SETUP</div><div class="sp-amount green mxn-price">$8,000</div><div class="sp-amount green usd-price hidden">$1,500</div><div class="sp-sub mxn-curr">MXN</div><div class="sp-sub usd-curr hidden">USD</div></div><div class="sp"><div class="sp-label">MENSUAL</div><div class="sp-amount wa mxn-price">$2,500</div><div class="sp-amount wa usd-price hidden">$400</div><div class="sp-sub mxn-curr">MXN/mes</div><div class="sp-sub usd-curr hidden">USD/mes</div></div></div><ul class="svc-includes"><li>Todo lo del Basico</li><li>Agenda automatica por telefono</li><li>Conectado a calendario</li><li>Confirmacion por WhatsApp</li><li>Califica prospectos</li><li>Recordatorios de cita</li><li>Grabacion y transcripcion</li><li>Dashboard de llamadas</li></ul></div><div class="svc-footer"><div class="svc-time">Setup: 3-5 dias</div><div class="svc-margin">Tu costo: ~$1,000 MXN/mes</div></div></div>
+  </div>
+</div>
+<div class="cat-section">
+  <div class="cat-header">
+    <div class="cat-color" style="background:var(--purple);"></div>
+    <div><div class="cat-title">Agentes Autonomos de IA</div><div class="cat-subtitle">Servicio #4 - Automatizacion inteligente de procesos</div></div>
+  </div>
+  <div class="services-grid">
+    <div class="svc"><div class="svc-accent" style="background:var(--purple);"></div><div class="svc-body"><div class="svc-tier">Agente Simple</div><div class="svc-name">Automatizacion de 1 Proceso</div><div class="svc-desc">Un agente que automatiza un proceso especifico que hoy hacen manualmente.</div><div class="svc-prices"><div class="sp"><div class="sp-label">SETUP</div><div class="sp-amount green mxn-price">$5,000</div><div class="sp-amount green usd-price hidden">$800</div><div class="sp-sub mxn-curr">MXN</div><div class="sp-sub usd-curr hidden">USD</div></div><div class="sp"><div class="sp-label">MENSUAL</div><div class="sp-amount wa mxn-price">$1,000</div><div class="sp-amount wa usd-price hidden">$200</div><div class="sp-sub mxn-curr">MXN/mes</div><div class="sp-sub usd-curr hidden">USD/mes</div></div></div><ul class="svc-includes"><li>Automatizacion de un proceso</li><li>Agente con IA</li><li>Emails automaticos</li><li>Reportes semanales</li><li>Procesa documentos/facturas</li><li>Publica en redes</li><li>Configuracion + capacitacion</li></ul></div><div class="svc-footer"><div class="svc-time">Setup: 2-4 dias</div><div class="svc-margin">Tu costo: ~$150 MXN/mes</div></div></div>
+    <div class="svc"><div class="svc-accent" style="background:var(--purple);"></div><div class="svc-body"><div class="svc-tier">Agente Avanzado</div><div class="svc-name">Automatizacion Multi-Proceso</div><div class="svc-desc">Multiples agentes conectados que automatizan una cadena completa de trabajo.</div><div class="svc-prices"><div class="sp"><div class="sp-label">SETUP</div><div class="sp-amount green mxn-price">$15,000</div><div class="sp-amount green usd-price hidden">$2,500</div><div class="sp-sub mxn-curr">MXN</div><div class="sp-sub usd-curr hidden">USD</div></div><div class="sp"><div class="sp-label">MENSUAL</div><div class="sp-amount wa mxn-price">$3,000</div><div class="sp-amount wa usd-price hidden">$500</div><div class="sp-sub mxn-curr">MXN/mes</div><div class="sp-sub usd-curr hidden">USD/mes</div></div></div><ul class="svc-includes"><li>3-5 procesos automatizados</li><li>CRM automatico</li><li>Emails + reportes + redes</li><li>Integracion con sistemas existentes</li><li>Dashboard centralizado</li><li>Alertas inteligentes</li><li>Soporte prioritario 60 dias</li></ul></div><div class="svc-footer"><div class="svc-time">Setup: 5-10 dias</div><div class="svc-margin">Tu costo: ~$400 MXN/mes</div></div></div>
+    <div class="svc"><div class="svc-accent" style="background:var(--purple);"></div><div class="svc-body"><div class="svc-tier">Agente Enterprise</div><div class="svc-name">Transformacion Digital Completa</div><div class="svc-desc">Sistema completo de agentes que transforma toda la operacion del negocio.</div><div class="svc-prices"><div class="sp"><div class="sp-label">SETUP</div><div class="sp-amount green mxn-price">$40,000+</div><div class="sp-amount green usd-price hidden">$6,000+</div><div class="sp-sub mxn-curr">MXN</div><div class="sp-sub usd-curr hidden">USD</div></div><div class="sp"><div class="sp-label">MENSUAL</div><div class="sp-amount wa mxn-price">$6,000+</div><div class="sp-amount wa usd-price hidden">$1,000+</div><div class="sp-sub mxn-curr">MXN/mes</div><div class="sp-sub usd-curr hidden">USD/mes</div></div></div><ul class="svc-includes"><li>Auditoria completa de procesos</li><li>Diseno e implementacion a medida</li><li>Automatizacion de ventas, operaciones y atencion</li><li>Integraciones con todos los sistemas</li><li>Capacitacion al equipo completo</li><li>Dashboard ejecutivo</li><li>Soporte 90 dias</li><li>Mejoras trimestrales</li></ul></div><div class="svc-footer"><div class="svc-time">Setup: 2-4 semanas</div><div class="svc-margin">Tu costo: ~$1,500 MXN/mes</div></div></div>
+  </div>
+</div>
+<div class="divider"></div>
+<div class="cat-section">
+  <div class="cat-header">
+    <div class="cat-color" style="background:linear-gradient(var(--blue),var(--whatsapp),var(--voice),var(--purple));"></div>
+    <div><div class="cat-title">Combos (Paquetes)</div><div class="cat-subtitle">Donde el cliente ahorra y tu ganas mas.</div></div>
+  </div>
+  <div class="combo-grid">
+    <div class="combo"><div class="combo-top" style="--c1:var(--blue);--c2:var(--whatsapp);"></div><div class="combo-body"><div class="combo-badge" style="color:var(--blue);">COMBO STARTER</div><div class="combo-name">Web + Chatbot WhatsApp</div><div class="combo-formula">Web Profesional + Bot Inteligente</div><div class="combo-save">Ahorra <span class="mxn-price">$4,500</span><span class="usd-price hidden">$1,000</span> vs comprar por separado</div><div class="svc-prices"><div class="sp"><div class="sp-label">SETUP</div><div class="sp-amount green mxn-price">$7,500</div><div class="sp-amount green usd-price hidden">$1,500</div><div class="sp-sub mxn-curr">MXN</div><div class="sp-sub usd-curr hidden">USD</div></div><div class="sp"><div class="sp-label">MENSUAL</div><div class="sp-amount wa mxn-price">$1,200</div><div class="sp-amount wa usd-price hidden">$250</div><div class="sp-sub mxn-curr">MXN/mes</div><div class="sp-sub usd-curr hidden">USD/mes</div></div></div><ul class="svc-includes"><li>Sitio web completo con SEO</li><li>Chatbot de WhatsApp con IA</li><li>Sistema de citas o pedidos</li><li>Recordatorios automaticos</li><li>Dashboard de conversaciones</li><li>2 rondas de revisiones</li><li>Soporte 30 dias</li></ul></div></div>
+    <div class="combo featured"><div class="combo-top" style="--c1:var(--gold);--c2:var(--orange);"></div><div class="combo-body"><div class="combo-badge" style="color:var(--gold);">COMBO PRO - MAS VENDIDO</div><div class="combo-name">Web + Chatbot + Agente de Voz</div><div class="combo-formula">La trinidad completa</div><div class="combo-save">Ahorra <span class="mxn-price">$8,500</span><span class="usd-price hidden">$1,800</span> vs comprar por separado</div><div class="svc-prices"><div class="sp"><div class="sp-label">SETUP</div><div class="sp-amount green mxn-price">$14,000</div><div class="sp-amount green usd-price hidden">$3,000</div><div class="sp-sub mxn-curr">MXN</div><div class="sp-sub usd-curr hidden">USD</div></div><div class="sp"><div class="sp-label">MENSUAL</div><div class="sp-amount wa mxn-price">$3,500</div><div class="sp-amount wa usd-price hidden">$600</div><div class="sp-sub mxn-curr">MXN/mes</div><div class="sp-sub usd-curr hidden">USD/mes</div></div></div><ul class="svc-includes"><li>Todo lo del Combo Starter</li><li>Agente de voz pro</li><li>Confirmacion por WhatsApp</li><li>Atencion 24/7 por texto y voz</li><li>Grabacion y transcripcion</li><li>Analytics de llamadas y conversaciones</li><li>Soporte prioritario 45 dias</li></ul></div></div>
+    <div class="combo"><div class="combo-top" style="--c1:var(--purple);--c2:var(--voice);"></div><div class="combo-body"><div class="combo-badge" style="color:var(--purple);">COMBO TOTAL</div><div class="combo-name">Digitalizacion Completa</div><div class="combo-formula">Todo integrado</div><div class="combo-save">Ahorra <span class="mxn-price">$18,500</span><span class="usd-price hidden">$3,300</span> vs comprar por separado</div><div class="svc-prices"><div class="sp"><div class="sp-label">SETUP</div><div class="sp-amount green mxn-price">$25,000</div><div class="sp-amount green usd-price hidden">$5,000</div><div class="sp-sub mxn-curr">MXN</div><div class="sp-sub usd-curr hidden">USD</div></div><div class="sp"><div class="sp-label">MENSUAL</div><div class="sp-amount wa mxn-price">$5,000</div><div class="sp-amount wa usd-price hidden">$900</div><div class="sp-sub mxn-curr">MXN/mes</div><div class="sp-sub usd-curr hidden">USD/mes</div></div></div><ul class="svc-includes"><li>Todo lo del Combo Pro</li><li>Bot multicanal</li><li>Agentes autonomos</li><li>CRM integrado completo</li><li>Campanas masivas</li><li>SEO mensual</li><li>Reportes ejecutivos</li><li>Revisiones ilimitadas</li><li>Soporte prioritario 60 dias</li></ul></div></div>
+    <div class="combo"><div class="combo-top" style="--c1:var(--orange);--c2:var(--red);"></div><div class="combo-body"><div class="combo-badge" style="color:var(--orange);">COMBO ENTERPRISE</div><div class="combo-name">Transformacion Digital Total</div><div class="combo-formula">Todo a medida para empresas grandes</div><div class="svc-prices"><div class="sp"><div class="sp-label">SETUP</div><div class="sp-amount green mxn-price">$50,000+</div><div class="sp-amount green usd-price hidden">$8,000+</div><div class="sp-sub mxn-curr">MXN</div><div class="sp-sub usd-curr hidden">USD</div></div><div class="sp"><div class="sp-label">MENSUAL</div><div class="sp-amount wa mxn-price">$8,000+</div><div class="sp-amount wa usd-price hidden">$1,500+</div><div class="sp-sub mxn-curr">MXN/mes</div><div class="sp-sub usd-curr hidden">USD/mes</div></div></div><ul class="svc-includes"><li>Todo lo del Combo Total</li><li>Plataforma web o app a medida</li><li>Automatizacion de procesos internos completos</li><li>Agentes entrenados con datos del negocio</li><li>Integraciones con ERP, CRM y sistemas existentes</li><li>Capacitacion completa</li><li>Soporte 90 dias</li><li>Actualizaciones trimestrales</li></ul></div></div>
+  </div>
+</div>
+<div class="divider"></div>
+<div class="cat-section">
+  <div class="cat-header">
+    <div class="cat-color" style="background:var(--cyan);"></div>
+    <div><div class="cat-title">Add-Ons (Extras)</div><div class="cat-subtitle">Servicios adicionales para vender a clientes existentes.</div></div>
+  </div>
+  <div class="addons-grid">
+    <div class="addon"><div class="addon-name">Mantenimiento Web</div><div class="addon-price mxn-price">$800-1,500 MXN/mes</div><div class="addon-price usd-price hidden">$100-200 USD/mes</div><div class="addon-desc">Actualizaciones, backups, monitoreo y cambios menores.</div></div>
+    <div class="addon"><div class="addon-name">SEO + Blog Mensual</div><div class="addon-price mxn-price">$2,000-4,000 MXN/mes</div><div class="addon-price usd-price hidden">$300-600 USD/mes</div><div class="addon-desc">4-8 articulos SEO por mes.</div></div>
+    <div class="addon"><div class="addon-name">Manejo de Redes Sociales</div><div class="addon-price mxn-price">$3,000-6,000 MXN/mes</div><div class="addon-price usd-price hidden">$400-800 USD/mes</div><div class="addon-desc">12-20 posts al mes con diseno y copy.</div></div>
+    <div class="addon"><div class="addon-name">Email Marketing</div><div class="addon-price mxn-price">$1,500-3,000 MXN/mes</div><div class="addon-price usd-price hidden">$200-400 USD/mes</div><div class="addon-desc">4 campanas de email al mes.</div></div>
+    <div class="addon"><div class="addon-name">Google/Facebook Ads</div><div class="addon-price mxn-price">$2,000-5,000 MXN/mes + presupuesto de ads</div><div class="addon-price usd-price hidden">$300-800 USD/mes + ad spend</div><div class="addon-desc">Creacion y gestion de campanas publicitarias.</div></div>
+  </div>
+</div>
+</div>
+<script>
+function normalizedText(el) {
+  return el ? el.textContent.trim().replace(/\s+/g, ' ') : '';
+}
+
+function buildCheckoutUrl({ name, price, billing, id }) {
+  const params = new URLSearchParams({
+    checkoutId: id,
+    checkoutName: name,
+    checkoutPrice: price,
+    checkoutBilling: billing,
+  });
+  return '/?' + params.toString() + '#workforce';
+}
+
+function createLink(label, href, className) {
+  const link = document.createElement('a');
+  link.href = href;
+  link.className = className;
+  link.textContent = label;
+  return link;
+}
+
+function pickServicePayment(card) {
+  const prices = Array.from(card.querySelectorAll('.sp')).map((block) => {
+    const label = normalizedText(block.querySelector('.sp-label'));
+    const amount = normalizedText(block.querySelector('.mxn-price')) || normalizedText(block.querySelector('.sp-amount'));
+    const sub = normalizedText(block.querySelector('.mxn-curr')) || normalizedText(block.querySelector('.sp-sub'));
+    return { label, amount, sub };
+  }).filter((item) => item.amount && item.amount !== '-');
+
+  const monthly = prices.find((item) => item.label === 'MENSUAL' && item.sub.includes('MXN/mes'));
+  if (monthly) return { amount: `${monthly.amount} MXN`, billing: 'monthly', label: 'Ir a pago mensual' };
+
+  const setup = prices.find((item) => item.label === 'SETUP');
+  if (setup) return { amount: `${setup.amount} MXN`, billing: 'one_time', label: 'Ir a pago' };
+
+  return null;
+}
+
+function attachServiceButtons() {
+  document.querySelectorAll('.svc').forEach((card, index) => {
+    const target = card.querySelector('.svc-body');
+    const title = normalizedText(card.querySelector('.svc-name'));
+    const payment = pickServicePayment(card);
+    if (!target || !title || !payment) return;
+
+    const actions = document.createElement('div');
+    actions.className = 'card-actions';
+    actions.appendChild(
+      createLink(
+        payment.label,
+        buildCheckoutUrl({
+          id: `catalog-service-${index + 1}`,
+          name: title,
+          price: payment.amount,
+          billing: payment.billing,
+        }),
+        'pay-link',
+      ),
+    );
+    target.appendChild(actions);
+  });
+}
+
+function attachComboButtons() {
+  document.querySelectorAll('.combo').forEach((card, index) => {
+    const target = card.querySelector('.combo-body');
+    const title = normalizedText(card.querySelector('.combo-name'));
+    const monthly = Array.from(card.querySelectorAll('.sp')).map((block) => ({
+      label: normalizedText(block.querySelector('.sp-label')),
+      amount: normalizedText(block.querySelector('.mxn-price')),
+      sub: normalizedText(block.querySelector('.mxn-curr')) || normalizedText(block.querySelector('.sp-sub')),
+    })).find((item) => item.label === 'MENSUAL' && item.amount);
+
+    if (!target || !title || !monthly) return;
+
+    const actions = document.createElement('div');
+    actions.className = 'card-actions';
+    actions.appendChild(
+      createLink(
+        'Ir a pago mensual',
+        buildCheckoutUrl({
+          id: `catalog-combo-${index + 1}`,
+          name: title,
+          price: `${monthly.amount} MXN`,
+          billing: 'monthly',
+        }),
+        'pay-link',
+      ),
+    );
+    target.appendChild(actions);
+  });
+}
+
+function attachAddonButtons() {
+  document.querySelectorAll('.addon').forEach((card) => {
+    const title = normalizedText(card.querySelector('.addon-name'));
+    if (!title) return;
+    const actions = document.createElement('div');
+    actions.className = 'card-actions';
+    actions.appendChild(createLink('Solicitar cotizacion', '/#contact', 'quote-link'));
+    card.appendChild(actions);
+  });
+}
+
+attachServiceButtons();
+attachComboButtons();
+attachAddonButtons();
+</script>
+</body>
+</html>

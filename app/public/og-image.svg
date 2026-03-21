@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="title desc">
+  <title id="title">KAN LOGIC</title>
+  <desc id="desc">Sistemas con IA que captan, responden y venden por ti.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#05070b"/>
+      <stop offset="100%" stop-color="#0f1722"/>
+    </linearGradient>
+    <linearGradient id="stroke" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00F0FF"/>
+      <stop offset="100%" stop-color="#B829F7"/>
+    </linearGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="24" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <circle cx="285" cy="190" r="170" fill="#00F0FF" opacity="0.08"/>
+  <circle cx="955" cy="470" r="190" fill="#B829F7" opacity="0.08"/>
+  <rect x="106" y="115" width="170" height="170" rx="34" fill="#08131a" stroke="#00F0FF" stroke-width="6"/>
+  <path d="M164 145h24v110h-24zm39 37h26l32 73h-28l-30-73z" fill="#00F0FF" filter="url(#glow)"/>
+  <rect x="336" y="126" width="728" height="388" rx="34" fill="#0b1118" stroke="url(#stroke)" stroke-width="2" opacity="0.95"/>
+  <text x="390" y="220" fill="#00F0FF" font-size="28" font-family="JetBrains Mono, monospace" letter-spacing="5">KAN LOGIC</text>
+  <text x="390" y="300" fill="#F8FAFC" font-size="66" font-weight="700" font-family="Space Grotesk, Arial, sans-serif">Sistemas con IA</text>
+  <text x="390" y="370" fill="#F8FAFC" font-size="66" font-weight="700" font-family="Space Grotesk, Arial, sans-serif">que captan, responden</text>
+  <text x="390" y="440" fill="#00F0FF" font-size="66" font-weight="700" font-family="Space Grotesk, Arial, sans-serif">y venden por ti</text>
+  <text x="390" y="495" fill="#B3C0CF" font-size="28" font-family="JetBrains Mono, monospace">Chatbots • Voz • Automatizacion • Web</text>
+</svg>

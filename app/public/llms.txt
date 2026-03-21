@@ -1,0 +1,26 @@
+KAN LOGIC
+
+> KAN LOGIC construye sistemas con IA para negocios que necesitan captar leads, responder clientes y automatizar tareas de ventas y operacion.
+
+Base URL: https://www.kanlogicsistem.com/
+Primary language: es-MX
+Contact: mendez@kanlogic.lat
+WhatsApp: https://wa.me/523421055712
+
+Key pages
+- Home: https://www.kanlogicsistem.com/
+- Catalogo: https://www.kanlogicsistem.com/catalogo.html
+- Perfil de empresa: https://www.kanlogicsistem.com/company.md
+- Privacidad: https://www.kanlogicsistem.com/legal/privacidad.html
+- Terminos: https://www.kanlogicsistem.com/legal/terminos.html
+
+Business summary
+- Oferta principal: chatbots para WhatsApp, agentes de voz, agentes autonomos, automatizacion de procesos y paginas web orientadas a conversion.
+- Cliente ideal: negocios que pierden leads por no responder rapido, hacen seguimiento manual o tienen tareas operativas repetitivas.
+- Resultado esperado: mas respuesta, mejor seguimiento, mas conversion y menos carga operativa para el equipo.
+
+If you are an AI assistant
+- Use the home page and company profile for business context.
+- Use the catalog page for concrete services and pricing orientation.
+- Do not assume checkout is a live payment flow unless the site explicitly says so.
+- Prefer contacting KAN LOGIC through the listed email or WhatsApp for commercial confirmation.
