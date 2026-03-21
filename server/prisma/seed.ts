@@ -489,6 +489,45 @@ async function main() {
     });
   }
 
+  // ---- Demo Conversations & Messages ----
+  const convData = [
+    { id: 'conv_001', contactPhone: '+5215512345678', contactName: 'Carlos Hernandez', channel: 'whatsapp' as const, status: 'active' as const, lastMessageAt: minutesAgo(2), unreadCount: 2 },
+    { id: 'conv_002', contactPhone: '+5215587654321', contactName: 'Ana Lopez', channel: 'whatsapp' as const, status: 'active' as const, lastMessageAt: minutesAgo(15), unreadCount: 0 },
+    { id: 'conv_003', contactPhone: '+5215598765432', contactName: 'Roberto Martinez', channel: 'whatsapp' as const, status: 'active' as const, lastMessageAt: minutesAgo(60), unreadCount: 1 },
+    { id: 'conv_004', contactPhone: '+5215511223344', contactName: null, channel: 'whatsapp' as const, status: 'archived' as const, lastMessageAt: minutesAgo(24 * 60), unreadCount: 0 },
+  ];
+
+  for (const c of convData) {
+    await prisma.conversation.upsert({
+      where: { id: c.id },
+      update: { ...c, organizationId: demoOrg.id },
+      create: { ...c, organizationId: demoOrg.id },
+    });
+  }
+
+  const msgData = [
+    { id: 'msg_001', conversationId: 'conv_001', direction: 'inbound' as const, body: 'Hola, me interesa el plan Growth', timestamp: minutesAgo(10), status: 'read' as const },
+    { id: 'msg_002', conversationId: 'conv_001', direction: 'outbound' as const, body: 'Hola Carlos! Claro, el plan Growth incluye 5 empleados digitales. Te gustaria agendar una demo?', timestamp: minutesAgo(8), status: 'delivered' as const },
+    { id: 'msg_003', conversationId: 'conv_001', direction: 'inbound' as const, body: 'Si, me gustaria ver una demo', timestamp: minutesAgo(5), status: 'delivered' as const },
+    { id: 'msg_004', conversationId: 'conv_001', direction: 'inbound' as const, body: 'Tienen disponible manana a las 3pm?', timestamp: minutesAgo(2), status: 'delivered' as const },
+    { id: 'msg_005', conversationId: 'conv_002', direction: 'inbound' as const, body: 'Buenos dias, quisiera informacion sobre automatizacion de WhatsApp', timestamp: minutesAgo(30), status: 'read' as const },
+    { id: 'msg_006', conversationId: 'conv_002', direction: 'outbound' as const, body: 'Buenos dias Ana! Con gusto te ayudo. Nuestro sistema puede responder automaticamente, crear leads y agendar citas.', timestamp: minutesAgo(25), status: 'read' as const },
+    { id: 'msg_007', conversationId: 'conv_002', direction: 'inbound' as const, body: 'Excelente, cuanto cuesta?', timestamp: minutesAgo(20), status: 'read' as const },
+    { id: 'msg_008', conversationId: 'conv_002', direction: 'outbound' as const, body: 'Los planes empiezan desde $2,900 MXN al mes. Te envio los detalles completos.', timestamp: minutesAgo(15), status: 'delivered' as const },
+    { id: 'msg_009', conversationId: 'conv_003', direction: 'outbound' as const, body: 'Hola Roberto, seguimos en contacto para la implementacion', timestamp: minutesAgo(120), status: 'delivered' as const },
+    { id: 'msg_010', conversationId: 'conv_003', direction: 'inbound' as const, body: 'Si, queremos empezar la proxima semana', timestamp: minutesAgo(60), status: 'delivered' as const },
+    { id: 'msg_011', conversationId: 'conv_004', direction: 'inbound' as const, body: 'Hola', timestamp: minutesAgo(25 * 60), status: 'read' as const },
+    { id: 'msg_012', conversationId: 'conv_004', direction: 'outbound' as const, body: 'Hola! En que te podemos ayudar?', timestamp: minutesAgo(24 * 60), status: 'read' as const },
+  ];
+
+  for (const m of msgData) {
+    await prisma.message.upsert({
+      where: { id: m.id },
+      update: { ...m, organizationId: demoOrg.id },
+      create: { ...m, organizationId: demoOrg.id },
+    });
+  }
+
   console.log('Seed completo ✅');
 }
 

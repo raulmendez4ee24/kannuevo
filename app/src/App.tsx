@@ -31,6 +31,7 @@ const PrivacyPage = lazy(() => import('./pages/legal/PrivacyPage'));
 const DataDeletionPage = lazy(() => import('./pages/legal/DataDeletionPage'));
 
 // Lazy-loaded: Dashboard
+const Messages = lazy(() => import('./pages/dashboard/Messages'));
 const DashboardLayout = lazy(() => import('./pages/dashboard/DashboardLayout'));
 const Overview = lazy(() => import('./pages/dashboard/Overview'));
 const Automations = lazy(() => import('./pages/dashboard/Automations'));
@@ -382,6 +383,7 @@ function AppRoutes() {
 
         {/* Dashboard Routes */}
         <Route path="/dashboard" element={<ProtectedRoute><DashboardLayout><Overview /></DashboardLayout></ProtectedRoute>} />
+        <Route path="/dashboard/messages" element={<ProtectedRoute><DashboardLayout><Messages /></DashboardLayout></ProtectedRoute>} />
         <Route path="/dashboard/automations" element={<ProtectedRoute permission="automation:view"><DashboardLayout><Automations /></DashboardLayout></ProtectedRoute>} />
         <Route path="/dashboard/tasks" element={<ProtectedRoute permission="tasks:view"><DashboardLayout><Tasks /></DashboardLayout></ProtectedRoute>} />
         <Route path="/dashboard/integrations" element={<ProtectedRoute permission="integrations:view"><DashboardLayout><Integrations /></DashboardLayout></ProtectedRoute>} />

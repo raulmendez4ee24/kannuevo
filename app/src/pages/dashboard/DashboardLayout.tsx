@@ -3,13 +3,14 @@ import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../lib/api';
-import { 
-  LayoutDashboard, 
-  Workflow, 
-  Terminal, 
-  Plug, 
-  Shield, 
-  Users, 
+import {
+  LayoutDashboard,
+  MessageSquare,
+  Workflow,
+  Terminal,
+  Plug,
+  Shield,
+  Users,
   BarChart3,
   FileText,
   LogOut,
@@ -28,6 +29,7 @@ interface DashboardLayoutProps {
 
 const navItems = [
   { id: 'overview', label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
+  { id: 'messages', label: 'Mensajes', icon: MessageSquare, href: '/dashboard/messages' },
   { id: 'automations', label: 'Automatizaciones', icon: Workflow, href: '/dashboard/automations' },
   { id: 'tasks', label: 'Misiones', icon: Terminal, href: '/dashboard/tasks' },
   { id: 'integrations', label: 'Integraciones', icon: Plug, href: '/dashboard/integrations' },

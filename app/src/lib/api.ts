@@ -14,9 +14,41 @@ export interface DashboardOverview {
   recentActivity: ActivityEvent[];
 }
 
+export interface ConversationSummary {
+  id: string;
+  contactPhone: string;
+  contactName: string | null;
+  channel: 'whatsapp' | 'instagram' | 'messenger' | 'web';
+  status: 'active' | 'archived';
+  lastMessageAt: string | null;
+  unreadCount: number;
+  lastMessage: {
+    body: string;
+    direction: 'inbound' | 'outbound';
+    timestamp: string;
+  } | null;
+}
+
+export interface ChatMessage {
+  id: string;
+  direction: 'inbound' | 'outbound';
+  body: string;
+  mediaUrl?: string | null;
+  timestamp: string;
+  status: 'sent' | 'delivered' | 'read' | 'failed';
+}
+
+export interface ConversationDetail {
+  id: string;
+  contactPhone: string;
+  contactName: string | null;
+  channel: string;
+  status: string;
+}
+
 export interface ActivityEvent {
   id: string;
-  type: 'automation' | 'task' | 'integration' | 'alert' | 'approval' | 'security';
+  type: 'automation' | 'task' | 'integration' | 'alert' | 'approval' | 'security' | 'message';
   title: string;
   description: string;
   timestamp: string;
@@ -178,12 +210,19 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
 type TaskProgressUpdate = { runId: string; progress: number; status: string };
 type TaskLogMessage = { runId: string; stepId: string; stepName: string; message: string; timestamp: string };
 
+export type NewMessageEvent = {
+  conversationId: string;
+  message: ChatMessage;
+  contact?: { phone: string; name: string | null };
+};
+
 type StreamState = {
   es: EventSource | null;
   refs: number;
   activity: Set<(event: ActivityEvent) => void>;
   taskProgress: Set<(update: TaskProgressUpdate) => void>;
   taskLog: Set<(msg: TaskLogMessage) => void>;
+  newMessage: Set<(event: NewMessageEvent) => void>;
 };
 
 const stream: StreamState = {
@@ -192,6 +231,7 @@ const stream: StreamState = {
   activity: new Set(),
   taskProgress: new Set(),
   taskLog: new Set(),
+  newMessage: new Set(),
 };
 
 function ensureStream() {
@@ -211,6 +251,11 @@ function ensureStream() {
   stream.es.addEventListener('task_log', (ev) => {
     const data = JSON.parse((ev as MessageEvent).data) as TaskLogMessage;
     for (const cb of stream.taskLog) cb(data);
+  });
+
+  stream.es.addEventListener('new_message', (ev) => {
+    const data = JSON.parse((ev as MessageEvent).data) as NewMessageEvent;
+    for (const cb of stream.newMessage) cb(data);
   });
 }
 
@@ -348,6 +393,46 @@ export const api = {
 
   async impersonate(userId: string | null, organizationId: string | null): Promise<void> {
     await requestJson('/api/admin/impersonate', { method: 'POST', body: JSON.stringify({ userId, organizationId }) });
+  },
+
+  // Conversations / Messages
+  async getConversations(params?: {
+    status?: 'active' | 'archived';
+    channel?: string;
+    search?: string;
+  }): Promise<{ conversations: ConversationSummary[] }> {
+    const qs = new URLSearchParams();
+    if (params?.status) qs.set('status', params.status);
+    if (params?.channel) qs.set('channel', params.channel);
+    if (params?.search) qs.set('search', params.search);
+    return requestJson(`/api/client/conversations?${qs.toString()}`);
+  },
+
+  async getMessages(conversationId: string): Promise<{
+    conversation: ConversationDetail;
+    messages: ChatMessage[];
+  }> {
+    return requestJson(`/api/client/conversations/${encodeURIComponent(conversationId)}/messages`);
+  },
+
+  async sendMessage(conversationId: string, body: string): Promise<{
+    ok: boolean;
+    message: ChatMessage;
+  }> {
+    return requestJson(`/api/client/conversations/${encodeURIComponent(conversationId)}/messages`, {
+      method: 'POST',
+      body: JSON.stringify({ body }),
+    });
+  },
+
+  subscribeToMessages(callback: (event: NewMessageEvent) => void): () => void {
+    ensureStream();
+    stream.refs += 1;
+    stream.newMessage.add(callback);
+    return () => {
+      stream.newMessage.delete(callback);
+      releaseStream();
+    };
   },
 
   // Stripe

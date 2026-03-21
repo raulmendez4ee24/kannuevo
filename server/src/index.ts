@@ -789,7 +789,7 @@ setInterval(() => ssePing(), 25_000).unref();
 app.get('/api/client/overview', requireAuth, requirePermission('dashboard:view'), async (req, res) => {
   const auth = (req as AuthedRequest).auth;
 
-  const [events, workflows, integrations] = await Promise.all([
+  const [events, workflows, integrations, conversationCount, unreadAgg] = await Promise.all([
     prisma.event.findMany({
       where: { organizationId: auth.organizationId },
       orderBy: { createdAt: 'desc' },
@@ -797,6 +797,8 @@ app.get('/api/client/overview', requireAuth, requirePermission('dashboard:view')
     }),
     prisma.workflow.findMany({ where: { organizationId: auth.organizationId } }),
     prisma.integration.findMany({ where: { organizationId: auth.organizationId } }),
+    prisma.conversation.count({ where: { organizationId: auth.organizationId } }),
+    prisma.conversation.aggregate({ where: { organizationId: auth.organizationId }, _sum: { unreadCount: true } }),
   ]);
 
   const systemStatus =
@@ -806,7 +808,9 @@ app.get('/api/client/overview', requireAuth, requirePermission('dashboard:view')
         ? 'warning'
         : 'healthy';
 
-  const conversations = workflows.find((w: typeof workflows[number]) => (w.config as any)?.trigger === 'webhook:whatsapp')?.runCount ?? 0;
+  const conversations = conversationCount > 0
+    ? conversationCount
+    : (workflows.find((w: typeof workflows[number]) => (w.config as any)?.trigger === 'webhook:whatsapp')?.runCount ?? 0);
   const leads = Math.round(conversations * 0.12);
   const appointments = Math.round(leads * 0.57);
   const roi = 3.2;
@@ -819,6 +823,7 @@ app.get('/api/client/overview', requireAuth, requirePermission('dashboard:view')
       roi: { value: roi, change: 0.4, trend: 'up' },
       timeSaved: { value: 42, unit: 'horas' },
       automationsActive: workflows.filter((w: typeof workflows[number]) => w.status === 'active').length,
+      unreadMessages: unreadAgg._sum.unreadCount ?? 0,
     },
     systemStatus,
     recentActivity: events.map((e: typeof events[number]) => ({
@@ -854,6 +859,228 @@ app.get('/api/client/activity', requireAuth, requirePermission('dashboard:view')
       metadata: e.metadata ?? undefined,
     })),
   });
+});
+
+// ---- Conversations / Messages ----
+
+app.get('/api/client/conversations', requireAuth, requirePermission('dashboard:view'), async (req, res) => {
+  const auth = (req as AuthedRequest).auth;
+  const status = req.query.status === 'archived' ? 'archived' : 'active';
+  const channel = typeof req.query.channel === 'string' ? req.query.channel : undefined;
+  const search = typeof req.query.search === 'string' ? req.query.search.trim() : '';
+  const limit = z.coerce.number().int().positive().max(100).default(50).parse(req.query.limit ?? '50');
+
+  const where: any = {
+    organizationId: auth.organizationId,
+    status,
+    ...(channel ? { channel } : {}),
+    ...(search ? {
+      OR: [
+        { contactName: { contains: search, mode: 'insensitive' } },
+        { contactPhone: { contains: search } },
+      ],
+    } : {}),
+  };
+
+  const conversations = await prisma.conversation.findMany({
+    where,
+    orderBy: { lastMessageAt: 'desc' },
+    take: limit,
+  });
+
+  const convIds = conversations.map(c => c.id);
+  const lastMessages = convIds.length > 0
+    ? await prisma.message.findMany({
+        where: { conversationId: { in: convIds } },
+        orderBy: { timestamp: 'desc' },
+        distinct: ['conversationId'],
+      })
+    : [];
+  const lastMsgMap = new Map(lastMessages.map(m => [m.conversationId, m]));
+
+  res.json({
+    conversations: conversations.map(c => {
+      const lastMsg = lastMsgMap.get(c.id);
+      return {
+        id: c.id,
+        contactPhone: c.contactPhone,
+        contactName: c.contactName,
+        channel: c.channel,
+        status: c.status,
+        lastMessageAt: c.lastMessageAt?.toISOString() ?? null,
+        unreadCount: c.unreadCount,
+        lastMessage: lastMsg ? {
+          body: lastMsg.body,
+          direction: lastMsg.direction,
+          timestamp: lastMsg.timestamp.toISOString(),
+        } : null,
+      };
+    }),
+  });
+});
+
+app.get('/api/client/conversations/:id/messages', requireAuth, requirePermission('dashboard:view'), async (req, res) => {
+  const auth = (req as AuthedRequest).auth;
+  const id = req.params.id;
+  const limit = z.coerce.number().int().positive().max(100).default(50).parse(req.query.limit ?? '50');
+
+  const conversation = await prisma.conversation.findFirst({
+    where: { id, organizationId: auth.organizationId },
+  });
+  if (!conversation) return res.status(404).json({ error: 'NOT_FOUND' });
+
+  const messages = await prisma.message.findMany({
+    where: { conversationId: id },
+    orderBy: { timestamp: 'asc' },
+    take: limit,
+  });
+
+  // Mark as read
+  if (conversation.unreadCount > 0) {
+    await prisma.conversation.update({ where: { id }, data: { unreadCount: 0 } });
+  }
+
+  res.json({
+    conversation: {
+      id: conversation.id,
+      contactPhone: conversation.contactPhone,
+      contactName: conversation.contactName,
+      channel: conversation.channel,
+      status: conversation.status,
+    },
+    messages: messages.map(m => ({
+      id: m.id,
+      direction: m.direction,
+      body: m.body,
+      mediaUrl: m.mediaUrl,
+      timestamp: m.timestamp.toISOString(),
+      status: m.status,
+    })),
+  });
+});
+
+app.post('/api/client/conversations/:id/messages', requireAuth, requirePermission('dashboard:view'), async (req, res) => {
+  const auth = (req as AuthedRequest).auth;
+  const id = req.params.id;
+  const body = z.object({ body: z.string().min(1).max(4096) }).parse(req.body);
+
+  const conversation = await prisma.conversation.findFirst({
+    where: { id, organizationId: auth.organizationId },
+  });
+  if (!conversation) return res.status(404).json({ error: 'NOT_FOUND' });
+
+  const message = await prisma.message.create({
+    data: {
+      conversationId: conversation.id,
+      organizationId: auth.organizationId,
+      direction: 'outbound',
+      body: body.body,
+      timestamp: new Date(),
+      status: 'sent',
+    },
+  });
+
+  await prisma.conversation.update({
+    where: { id: conversation.id },
+    data: { lastMessageAt: message.timestamp },
+  });
+
+  sseBroadcast(auth.organizationId, {
+    type: 'new_message',
+    payload: {
+      conversationId: conversation.id,
+      message: {
+        id: message.id,
+        direction: message.direction,
+        body: message.body,
+        timestamp: message.timestamp.toISOString(),
+        status: message.status,
+      },
+    },
+  });
+
+  res.json({
+    ok: true,
+    message: {
+      id: message.id,
+      direction: message.direction,
+      body: message.body,
+      timestamp: message.timestamp.toISOString(),
+      status: message.status,
+    },
+  });
+});
+
+// ---- Meta Webhook (for future WhatsApp Business API) ----
+
+app.get('/api/webhooks/meta', (req, res) => {
+  const mode = req.query['hub.mode'];
+  const token = req.query['hub.verify_token'];
+  const challenge = req.query['hub.challenge'];
+  if (mode === 'subscribe' && token === (process.env.META_VERIFY_TOKEN || 'kanlogic_verify')) {
+    console.log('[META] Webhook verified');
+    return res.status(200).send(challenge);
+  }
+  res.status(403).json({ error: 'FORBIDDEN' });
+});
+
+app.post('/api/webhooks/meta', async (req, res) => {
+  res.status(200).json({ ok: true });
+
+  try {
+    const data = req.body;
+    if (data?.object !== 'whatsapp_business_account') return;
+
+    const integration = await prisma.integration.findFirst({
+      where: { provider: 'Meta', status: 'connected' },
+    });
+    if (!integration) return;
+
+    const orgId = integration.organizationId;
+
+    for (const entry of data.entry ?? []) {
+      for (const change of entry.changes ?? []) {
+        if (change.field !== 'messages') continue;
+        const value = change.value;
+
+        for (const msg of value?.messages ?? []) {
+          const from = msg.from;
+          const contact = value?.contacts?.find((c: any) => c.wa_id === from);
+          const contactName = contact?.profile?.name ?? null;
+          const msgBody = msg.text?.body ?? '';
+          const timestamp = new Date(parseInt(msg.timestamp) * 1000);
+
+          const conversation = await prisma.conversation.upsert({
+            where: { organizationId_contactPhone_channel: { organizationId: orgId, contactPhone: from, channel: 'whatsapp' } },
+            update: { contactName: contactName || undefined, lastMessageAt: timestamp, unreadCount: { increment: 1 }, status: 'active' },
+            create: { organizationId: orgId, contactPhone: from, contactName, channel: 'whatsapp', lastMessageAt: timestamp, unreadCount: 1 },
+          });
+
+          const existing = msg.id ? await prisma.message.findFirst({ where: { externalId: msg.id } }) : null;
+          if (existing) continue;
+
+          const newMsg = await prisma.message.create({
+            data: {
+              conversationId: conversation.id, organizationId: orgId,
+              direction: 'inbound', body: msgBody, timestamp, status: 'delivered',
+              externalId: msg.id ?? null,
+            },
+          });
+
+          sseBroadcast(orgId, {
+            type: 'new_message',
+            payload: {
+              conversationId: conversation.id,
+              message: { id: newMsg.id, direction: 'inbound', body: msgBody, timestamp: timestamp.toISOString(), status: 'delivered' },
+              contact: { phone: from, name: contactName },
+            },
+          });
+        }
+      }
+    }
+  } catch (err) {
+    console.error('[META] Webhook error:', err);
+  }
 });
 
 app.get('/api/client/workflows', requireAuth, requirePermission('automation:view'), async (req, res) => {
