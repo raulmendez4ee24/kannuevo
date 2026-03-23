@@ -4,18 +4,80 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Eliminacion de Datos | KAN Logic</title>
-  <meta name="description" content="Solicitud de eliminación de datos en KAN Logic.">
+  <meta name="description" content="Solicita la eliminacion de tus datos personales almacenados por KAN Logic Systems.">
   <link rel="canonical" href="https://www.kanlogicsistem.com/legal/eliminacion-datos.html">
   <style>
     body { font-family: system-ui, sans-serif; max-width: 760px; margin: 0 auto; padding: 48px 20px; background:#07070a; color:#e4e4ec; line-height:1.7; }
     a { color:#06b6d4; }
     h1, h2 { line-height:1.2; }
+    h1 { margin-bottom: 4px; }
+    .date { color: #888; font-size: 0.85em; margin-bottom: 2em; }
+    ul { padding-left: 1.5em; }
+    li { margin-bottom: 0.5em; }
+    section { margin-bottom: 2em; }
+    .code-box { background: #111; border: 1px solid #333; border-radius: 8px; padding: 16px; margin: 16px 0; font-family: monospace; color: #06b6d4; }
   </style>
 </head>
 <body>
   <h1>Eliminacion de Datos</h1>
-  <p>Si necesitas solicitar eliminación de datos, envía tu caso con el negocio, correo y motivo a KAN Logic para revisión operativa.</p>
-  <h2>Contacto</h2>
-  <p>Escribe a <a href="mailto:mendez@kanlogic.lat?subject=Solicitud%20de%20eliminacion%20de%20datos">mendez@kanlogic.lat</a>.</p>
+  <p class="date">Ultima actualizacion: 22 de marzo de 2026</p>
+
+  <section>
+    <h2>Solicitar Eliminacion de Datos</h2>
+    <p>KAN Logic te permite solicitar la eliminacion de todos los datos personales que tenemos almacenados. Esto incluye:</p>
+    <ul>
+      <li>Datos de tu cuenta (nombre, correo, organizacion)</li>
+      <li>Mensajes y conversaciones de WhatsApp, Messenger e Instagram</li>
+      <li>Configuraciones de automatizacion e integraciones</li>
+      <li>Logs de actividad y auditoria</li>
+      <li>Cualquier dato obtenido a traves de integraciones con Meta (Facebook/Instagram)</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Como Solicitar</h2>
+    <p>Envia un correo a <a href="mailto:mendez@kanlogic.lat?subject=Solicitud%20de%20eliminacion%20de%20datos">mendez@kanlogic.lat</a> con:</p>
+    <ul>
+      <li>Asunto: "Solicitud de eliminacion de datos"</li>
+      <li>Tu nombre completo</li>
+      <li>Correo electronico asociado a tu cuenta</li>
+      <li>Nombre de la organizacion (si aplica)</li>
+      <li>Codigo de confirmacion (si tienes uno)</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Tiempos de Procesamiento</h2>
+    <ul>
+      <li>Confirmacion de recepcion: 24-48 horas habiles</li>
+      <li>Eliminacion completa: maximo 30 dias calendario</li>
+      <li>Notificacion de completado: por correo electronico</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Verificar Estado de Eliminacion</h2>
+    <p>Si recibiste un codigo de confirmacion de Meta, tu solicitud ya fue registrada automaticamente.</p>
+    <div class="code-box" id="confirmation">
+      <script>
+        var params = new URLSearchParams(window.location.search);
+        var code = params.get('code');
+        if (code) {
+          document.getElementById('confirmation').innerHTML = 'Codigo de confirmacion: <strong>' + code + '</strong><br>Estado: En proceso';
+        } else {
+          document.getElementById('confirmation').innerHTML = 'No hay codigo de confirmacion activo.';
+        }
+      </script>
+    </div>
+  </section>
+
+  <section>
+    <h2>Contacto</h2>
+    <p>Para cualquier duda sobre la eliminacion de datos:</p>
+    <p><a href="mailto:mendez@kanlogic.lat">mendez@kanlogic.lat</a><br>
+    KAN Logic Systems<br>
+    Zapopan, Jalisco, Mexico<br>
+    Tel: +52 342 105 5712</p>
+  </section>
 </body>
 </html>

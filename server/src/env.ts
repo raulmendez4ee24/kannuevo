@@ -16,6 +16,9 @@ const envSchema = z.object({
   STRIPE_WEBHOOK_SECRET: z.string().optional(),
   GOOGLE_CLIENT_ID: z.string().optional(),
   APPLE_CLIENT_ID: z.string().optional(),
+  META_VERIFY_TOKEN: z.string().optional(),
+  META_APP_SECRET: z.string().optional(),
+  META_ACCESS_TOKEN: z.string().optional(),
 });
 
 export const env = envSchema.parse(process.env);
