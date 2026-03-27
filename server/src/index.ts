@@ -1025,6 +1025,21 @@ app.get('/api/webhooks/meta', (req, res) => {
 });
 
 app.post('/api/webhooks/meta', async (req, res) => {
+  // Verify X-Hub-Signature-256 if META_APP_SECRET is set
+  if (env.META_APP_SECRET) {
+    const signature = req.headers['x-hub-signature-256'] as string | undefined;
+    if (signature) {
+      const crypto = await import('node:crypto');
+      const expectedSig = 'sha256=' + crypto.createHmac('sha256', env.META_APP_SECRET)
+        .update(JSON.stringify(req.body))
+        .digest('hex');
+      if (signature !== expectedSig) {
+        console.warn('[META] Invalid webhook signature');
+        return res.status(403).json({ error: 'INVALID_SIGNATURE' });
+      }
+    }
+  }
+
   res.status(200).json({ ok: true });
 
   try {
@@ -1118,6 +1133,40 @@ app.post('/api/webhooks/meta/data-deletion', async (req, res) => {
       url: `${env.APP_ORIGIN}/#/data-deletion`,
       confirmation_code: `KAN-DEL-${Date.now().toString(36).toUpperCase()}`,
     });
+  }
+});
+
+// ---- Meta Deauthorize Callback ----
+// Called when a user removes the app from their Facebook/Meta account
+app.post('/api/webhooks/meta/deauthorize', async (req, res) => {
+  try {
+    const { signed_request } = req.body;
+    let userId = 'unknown';
+    if (signed_request && env.META_APP_SECRET) {
+      const [encodedSig, payload] = signed_request.split('.');
+      const decoded = JSON.parse(Buffer.from(payload, 'base64').toString('utf-8'));
+      userId = decoded.user_id ?? 'unknown';
+
+      // Verify HMAC signature
+      const crypto = await import('node:crypto');
+      const expectedSig = crypto.createHmac('sha256', env.META_APP_SECRET)
+        .update(payload)
+        .digest('base64')
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/, '');
+      const actualSig = encodedSig.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+      if (expectedSig !== actualSig) {
+        console.warn('[META] Deauthorize: invalid signature');
+        return res.status(403).json({ error: 'INVALID_SIGNATURE' });
+      }
+    }
+
+    console.log(`[META] Deauthorize callback for user ${userId}`);
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('[META] Deauthorize error:', err);
+    res.json({ ok: true });
   }
 });
 
