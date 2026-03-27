@@ -1,307 +1,179 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import {
-  MessageSquare,
-  Search,
-  Send,
-  Check,
-  CheckCheck,
-  Clock,
-  AlertCircle,
-  ArrowLeft,
-} from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { MessageSquare, Info, Archive, ArrowLeft } from 'lucide-react';
 import api from '../../lib/api';
-import type { ConversationSummary, ChatMessage } from '../../lib/api';
+import type { ChatMessage, ConversationDetail, Tag, OrgUser } from '../../lib/api';
+import ConversationList from '../../components/inbox/ConversationList';
+import ChatThread from '../../components/inbox/ChatThread';
+import ComposeBar from '../../components/inbox/ComposeBar';
+import ContactPanel from '../../components/inbox/ContactPanel';
 
-function timeAgo(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return 'ahora';
-  if (mins < 60) return `${mins}m`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h`;
-  const days = Math.floor(hrs / 24);
-  return `${days}d`;
-}
-
-function formatTime(dateStr: string): string {
-  return new Date(dateStr).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
-}
-
-function StatusIcon({ status }: { status: string }) {
-  if (status === 'read') return <CheckCheck className="w-3.5 h-3.5 text-cyber-cyan" />;
-  if (status === 'delivered') return <CheckCheck className="w-3.5 h-3.5 text-ghost-white/50" />;
-  if (status === 'sent') return <Check className="w-3.5 h-3.5 text-ghost-white/50" />;
-  if (status === 'failed') return <AlertCircle className="w-3.5 h-3.5 text-error-crimson" />;
-  return <Clock className="w-3.5 h-3.5 text-ghost-white/30" />;
-}
-
-function getInitials(name: string | null, phone: string): string {
-  if (name) {
-    return name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
-  }
-  return phone.slice(-2);
-}
+const CHANNEL_LABEL: Record<string, string> = {
+  whatsapp: 'WhatsApp', instagram: 'Instagram', messenger: 'Messenger', web: 'Web',
+};
+const CHANNEL_COLOR: Record<string, string> = {
+  whatsapp: 'text-green-400 bg-green-400/10 border-green-400/30',
+  instagram: 'text-pink-400 bg-pink-400/10 border-pink-400/30',
+  messenger: 'text-blue-400 bg-blue-400/10 border-blue-400/30',
+  web: 'text-cyber-cyan bg-cyber-cyan/10 border-cyber-cyan/30',
+};
 
 export default function Messages() {
-  const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [conversation, setConversation] = useState<ConversationDetail | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSending, setIsSending] = useState(false);
-  const [inputText, setInputText] = useState('');
-  const [search, setSearch] = useState('');
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [loadingThread, setLoadingThread] = useState(false);
+  const [showContactPanel, setShowContactPanel] = useState(false);
+  const [availableTags, setAvailableTags] = useState<Tag[]>([]);
+  const [orgUsers, setOrgUsers] = useState<OrgUser[]>([]);
 
-  const selectedConv = conversations.find(c => c.id === selectedId);
+  // Load tags + users once
+  useEffect(() => {
+    api.getTags().then(d => setAvailableTags(d.tags)).catch(() => {});
+    api.getOrgUsers().then(d => setOrgUsers(d.users)).catch(() => {});
+  }, []);
 
-  const loadConversations = useCallback(async () => {
+  const loadThread = useCallback(async (id: string) => {
+    setLoadingThread(true);
     try {
-      const data = await api.getConversations({
-        search: search || undefined,
-      });
-      setConversations(data.conversations);
-    } catch (err) {
-      console.error('Failed to load conversations:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [search]);
-
-  const loadMessages = useCallback(async (convId: string) => {
-    try {
-      const data = await api.getMessages(convId);
+      const data = await api.getMessages(id);
+      setConversation(data.conversation);
       setMessages(data.messages);
-      setConversations(prev => prev.map(c =>
-        c.id === convId ? { ...c, unreadCount: 0 } : c
-      ));
-      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
-    } catch (err) {
-      console.error('Failed to load messages:', err);
+      // mark read
+      api.markConversationRead(id).catch(() => {});
+    } catch {
+      // ignore
+    } finally {
+      setLoadingThread(false);
     }
   }, []);
 
-  useEffect(() => { loadConversations(); }, [loadConversations]);
   useEffect(() => {
-    if (selectedId) loadMessages(selectedId);
-  }, [selectedId, loadMessages]);
+    if (selectedId) {
+      loadThread(selectedId);
+    } else {
+      setConversation(null);
+      setMessages([]);
+    }
+  }, [selectedId, loadThread]);
 
-  // Real-time SSE
+  // SSE: append new messages to thread if open
   useEffect(() => {
-    const unsubscribe = api.subscribeToMessages((event) => {
-      setConversations(prev => {
-        const idx = prev.findIndex(c => c.id === event.conversationId);
-        if (idx >= 0) {
-          const updated = [...prev];
-          updated[idx] = {
-            ...updated[idx],
-            lastMessage: {
-              body: event.message.body,
-              direction: event.message.direction,
-              timestamp: event.message.timestamp,
-            },
-            lastMessageAt: event.message.timestamp,
-            unreadCount: event.conversationId === selectedId
-              ? 0
-              : updated[idx].unreadCount + (event.message.direction === 'inbound' ? 1 : 0),
-          };
-          updated.sort((a, b) =>
-            new Date(b.lastMessageAt ?? 0).getTime() - new Date(a.lastMessageAt ?? 0).getTime()
-          );
-          return updated;
-        }
-        loadConversations();
-        return prev;
-      });
-
-      if (event.conversationId === selectedId) {
-        setMessages(prev => [...prev, event.message]);
-        setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+    const unsub = api.subscribeToMessages((ev) => {
+      if (ev.conversationId === selectedId) {
+        setMessages(prev => {
+          if (prev.some(m => m.id === ev.message.id)) return prev;
+          return [...prev, ev.message];
+        });
       }
     });
-    return unsubscribe;
-  }, [selectedId, loadConversations]);
+    return unsub;
+  }, [selectedId]);
 
-  const handleSend = async () => {
-    if (!inputText.trim() || !selectedId || isSending) return;
-    setIsSending(true);
+  async function handleSend(body: string, isInternal: boolean) {
+    if (!selectedId) return;
+    const result = await api.sendMessage(selectedId, body, { isInternal });
+    setMessages(prev => {
+      if (prev.some(m => m.id === result.message.id)) return prev;
+      return [...prev, result.message];
+    });
+  }
+
+  async function handleUpdate(patch: Parameters<typeof api.updateConversation>[1]) {
+    if (!selectedId) return;
     try {
-      const result = await api.sendMessage(selectedId, inputText.trim());
-      setMessages(prev => [...prev, result.message]);
-      setInputText('');
-      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
-    } catch (err) {
-      console.error('Failed to send:', err);
-    } finally {
-      setIsSending(false);
+      const result = await api.updateConversation(selectedId, patch);
+      setConversation(result.conversation as unknown as ConversationDetail);
+    } catch {
+      // ignore
     }
-  };
+  }
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  };
-
-  // Mobile: show thread when conversation selected
-  const showThread = selectedId !== null;
+  const isMobileThread = selectedId !== null;
 
   return (
-    <div className="flex h-[calc(100vh-5rem)] overflow-hidden rounded-xl border border-terminal-gray/30 bg-void-black/50">
-      {/* Left panel: Conversation list */}
-      <div className={`w-full md:w-96 border-r border-terminal-gray/30 flex flex-col ${showThread ? 'hidden md:flex' : 'flex'}`}>
-        {/* Header */}
-        <div className="p-4 border-b border-terminal-gray/30">
-          <h2 className="font-display text-lg font-semibold text-frost-white mb-3">Mensajes</h2>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ghost-white/50" />
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar conversacion..."
-              className="w-full bg-steel-gray/30 border border-terminal-gray/50 rounded-lg pl-10 pr-4 py-2 text-sm text-frost-white placeholder:text-ghost-white/40 focus:border-cyber-cyan focus:outline-none"
-            />
-          </div>
-        </div>
-
-        {/* Conversation list */}
-        <div className="flex-1 overflow-y-auto scrollbar-cyber">
-          {isLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="w-8 h-8 border-2 border-cyber-cyan border-t-transparent rounded-full animate-spin" />
-            </div>
-          ) : conversations.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-ghost-white/50">
-              <MessageSquare className="w-10 h-10 mb-3" />
-              <p className="text-sm">Sin conversaciones</p>
-            </div>
-          ) : (
-            conversations.map(conv => (
-              <button
-                key={conv.id}
-                onClick={() => setSelectedId(conv.id)}
-                className={`w-full flex items-center gap-3 p-4 text-left transition-colors hover:bg-steel-gray/30 ${
-                  selectedId === conv.id ? 'bg-steel-gray/40 border-l-2 border-cyber-cyan' : 'border-l-2 border-transparent'
-                }`}
-              >
-                <div className="w-10 h-10 rounded-full bg-steel-gray flex items-center justify-center text-frost-white font-mono text-xs shrink-0">
-                  {getInitials(conv.contactName, conv.contactPhone)}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-frost-white truncate">
-                      {conv.contactName || conv.contactPhone}
-                    </span>
-                    <span className="text-[10px] text-ghost-white/50 font-mono shrink-0 ml-2">
-                      {conv.lastMessageAt ? timeAgo(conv.lastMessageAt) : ''}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between mt-0.5">
-                    <span className="text-xs text-ghost-white/60 truncate">
-                      {conv.lastMessage
-                        ? `${conv.lastMessage.direction === 'outbound' ? 'Tu: ' : ''}${conv.lastMessage.body}`
-                        : 'Sin mensajes'}
-                    </span>
-                    {conv.unreadCount > 0 && (
-                      <span className="ml-2 shrink-0 w-5 h-5 bg-cyber-cyan text-void-black rounded-full text-[10px] font-mono flex items-center justify-center font-bold">
-                        {conv.unreadCount}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </button>
-            ))
-          )}
-        </div>
+    <div className="flex h-[calc(100vh-5rem)] overflow-hidden rounded-xl border border-steel-gray/30 bg-void-black/50">
+      {/* Left: conversation list */}
+      <div className={`${isMobileThread ? 'hidden md:flex' : 'flex'} flex-col`}>
+        <ConversationList
+          selectedId={selectedId}
+          onSelect={setSelectedId}
+        />
       </div>
 
-      {/* Right panel: Message thread */}
-      <div className={`flex-1 flex flex-col ${showThread ? 'flex' : 'hidden md:flex'}`}>
-        {selectedConv ? (
+      {/* Center: thread */}
+      <div className={`flex-1 flex flex-col min-w-0 ${isMobileThread ? 'flex' : 'hidden md:flex'}`}>
+        {conversation ? (
           <>
             {/* Thread header */}
-            <div className="flex items-center gap-3 p-4 border-b border-terminal-gray/30">
+            <div className="flex items-center gap-3 px-4 py-3 border-b border-steel-gray/30 bg-void-black/60">
               <button
                 onClick={() => setSelectedId(null)}
-                className="md:hidden text-ghost-white hover:text-cyber-cyan"
+                className="md:hidden text-frost-white/50 hover:text-frost-white transition-colors"
               >
-                <ArrowLeft className="w-5 h-5" />
+                <ArrowLeft size={18} />
               </button>
-              <div className="w-10 h-10 rounded-full bg-steel-gray flex items-center justify-center text-frost-white font-mono text-xs">
-                {getInitials(selectedConv.contactName, selectedConv.contactPhone)}
-              </div>
-              <div>
-                <p className="text-sm font-medium text-frost-white">
-                  {selectedConv.contactName || selectedConv.contactPhone}
-                </p>
-                <p className="text-[10px] font-mono text-ghost-white/50">
-                  {selectedConv.contactPhone}
-                  <span className="ml-2 px-1.5 py-0.5 bg-matrix-green/20 text-matrix-green rounded text-[9px]">
-                    WhatsApp
-                  </span>
-                </p>
-              </div>
-            </div>
 
-            {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-cyber">
-              {messages.map(msg => (
-                <div
-                  key={msg.id}
-                  className={`flex ${msg.direction === 'outbound' ? 'justify-end' : 'justify-start'}`}
-                >
-                  <div
-                    className={`max-w-[75%] px-4 py-2.5 ${
-                      msg.direction === 'outbound'
-                        ? 'bg-cyber-cyan/10 border border-cyber-cyan/20 rounded-2xl rounded-tr-md'
-                        : 'bg-steel-gray/50 rounded-2xl rounded-tl-md'
-                    }`}
-                  >
-                    <p className="text-sm text-frost-white whitespace-pre-wrap break-words">{msg.body}</p>
-                    <div className={`flex items-center gap-1 mt-1 ${msg.direction === 'outbound' ? 'justify-end' : ''}`}>
-                      <span className="text-[10px] text-ghost-white/40 font-mono">
-                        {formatTime(msg.timestamp)}
-                      </span>
-                      {msg.direction === 'outbound' && <StatusIcon status={msg.status} />}
-                    </div>
-                  </div>
-                </div>
-              ))}
-              <div ref={messagesEndRef} />
-            </div>
+              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-cyber-cyan/30 to-neon-purple/30 border border-cyber-cyan/20 flex items-center justify-center text-sm font-bold text-frost-white flex-shrink-0">
+                {(conversation.contactName ?? conversation.contactPhone).slice(0, 2).toUpperCase()}
+              </div>
 
-            {/* Input */}
-            <div className="p-4 border-t border-terminal-gray/30">
-              <div className="flex items-end gap-2">
-                <textarea
-                  value={inputText}
-                  onChange={(e) => setInputText(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder="Escribe un mensaje..."
-                  rows={1}
-                  className="flex-1 bg-steel-gray/30 border border-terminal-gray/50 rounded-xl px-4 py-2.5 text-sm text-frost-white placeholder:text-ghost-white/40 focus:border-cyber-cyan focus:outline-none resize-none"
-                />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-frost-white truncate">
+                  {conversation.contactName ?? conversation.contactPhone}
+                </p>
+                <p className="text-xs text-frost-white/40 font-mono">{conversation.contactPhone}</p>
+              </div>
+
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <span className={`text-xs px-2 py-0.5 rounded border font-mono ${CHANNEL_COLOR[conversation.channel] ?? 'text-frost-white/50'}`}>
+                  {CHANNEL_LABEL[conversation.channel] ?? conversation.channel}
+                </span>
+
                 <button
-                  onClick={handleSend}
-                  disabled={!inputText.trim() || isSending}
-                  className="p-2.5 bg-cyber-cyan text-void-black rounded-xl hover:bg-cyber-cyan/80 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  onClick={async () => {
+                    await handleUpdate({ status: conversation.status === 'active' ? 'archived' : 'active' });
+                  }}
+                  title={conversation.status === 'active' ? 'Archivar' : 'Restaurar'}
+                  className="p-1.5 rounded text-frost-white/40 hover:text-frost-white transition-colors"
                 >
-                  <Send className="w-4 h-4" />
+                  <Archive size={15} />
+                </button>
+
+                <button
+                  onClick={() => setShowContactPanel(v => !v)}
+                  title="Info del contacto"
+                  className={`p-1.5 rounded transition-colors ${showContactPanel ? 'text-cyber-cyan bg-cyber-cyan/10' : 'text-frost-white/40 hover:text-frost-white'}`}
+                >
+                  <Info size={15} />
                 </button>
               </div>
             </div>
+
+            {/* Messages + compose */}
+            <ChatThread messages={messages} loading={loadingThread} />
+            <ComposeBar onSend={handleSend} />
           </>
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center text-ghost-white/40">
-            <div className="w-16 h-16 rounded-full bg-steel-gray/30 flex items-center justify-center mb-4">
-              <MessageSquare className="w-8 h-8" />
+          <div className="flex-1 flex flex-col items-center justify-center text-frost-white/30">
+            <div className="w-16 h-16 rounded-full bg-steel-gray/20 border border-steel-gray/30 flex items-center justify-center mb-4">
+              <MessageSquare size={28} />
             </div>
-            <p className="font-display text-lg text-frost-white/60">Selecciona una conversacion</p>
-            <p className="text-sm mt-1">Elige un contacto de la lista para ver los mensajes</p>
+            <p className="text-base font-semibold text-frost-white/50">Selecciona una conversación</p>
+            <p className="text-sm mt-1">Elige un contacto de la lista</p>
           </div>
         )}
       </div>
+
+      {/* Right: contact panel */}
+      {showContactPanel && conversation && (
+        <ContactPanel
+          conversation={conversation}
+          availableTags={availableTags}
+          orgUsers={orgUsers}
+          onClose={() => setShowContactPanel(false)}
+          onUpdate={handleUpdate}
+        />
+      )}
     </div>
   );
 }

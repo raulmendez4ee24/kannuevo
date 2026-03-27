@@ -863,77 +863,204 @@ app.get('/api/client/activity', requireAuth, requirePermission('dashboard:view')
 
 // ---- Conversations / Messages ----
 
+function serializeConversation(c: any, lastMsg?: any) {
+  return {
+    id: c.id,
+    contactPhone: c.contactPhone,
+    contactName: c.contactName,
+    contactEmail: c.contactEmail,
+    contactAvatar: c.contactAvatar,
+    channel: c.channel,
+    status: c.status,
+    priority: c.priority,
+    pipelineStage: c.pipelineStage,
+    assignedToId: c.assignedToId,
+    notes: c.notes,
+    lastMessageAt: c.lastMessageAt?.toISOString() ?? null,
+    unreadCount: c.unreadCount,
+    closedAt: c.closedAt?.toISOString() ?? null,
+    tags: (c.tags ?? []).map((ct: any) => ({ id: ct.tag.id, name: ct.tag.name, color: ct.tag.color })),
+    lastMessage: lastMsg ? {
+      body: lastMsg.body,
+      direction: lastMsg.direction,
+      timestamp: lastMsg.timestamp.toISOString(),
+      isInternal: lastMsg.isInternal,
+    } : null,
+  };
+}
+
 app.get('/api/client/conversations', requireAuth, requirePermission('dashboard:view'), async (req, res) => {
   const auth = (req as AuthedRequest).auth;
   const status = req.query.status === 'archived' ? 'archived' : 'active';
   const channel = typeof req.query.channel === 'string' ? req.query.channel : undefined;
   const search = typeof req.query.search === 'string' ? req.query.search.trim() : '';
+  const assignedTo = typeof req.query.assignedTo === 'string' ? req.query.assignedTo : undefined;
+  const tag = typeof req.query.tag === 'string' ? req.query.tag : undefined;
+  const priority = typeof req.query.priority === 'string' ? req.query.priority : undefined;
   const limit = z.coerce.number().int().positive().max(100).default(50).parse(req.query.limit ?? '50');
 
   const where: any = {
     organizationId: auth.organizationId,
     status,
     ...(channel ? { channel } : {}),
+    ...(assignedTo === 'me' ? { assignedToId: auth.userId } : assignedTo === 'unassigned' ? { assignedToId: null } : assignedTo ? { assignedToId: assignedTo } : {}),
+    ...(priority ? { priority } : {}),
+    ...(tag ? { tags: { some: { tag: { name: tag } } } } : {}),
     ...(search ? {
       OR: [
         { contactName: { contains: search, mode: 'insensitive' } },
         { contactPhone: { contains: search } },
+        { contactEmail: { contains: search, mode: 'insensitive' } },
       ],
     } : {}),
   };
 
   const conversations = await prisma.conversation.findMany({
     where,
-    orderBy: { lastMessageAt: 'desc' },
+    include: { tags: { include: { tag: true } } },
+    orderBy: [{ priority: 'desc' }, { lastMessageAt: 'desc' }],
     take: limit,
   });
 
-  const convIds = conversations.map(c => c.id);
+  const convIds = conversations.map((c: any) => c.id);
   const lastMessages = convIds.length > 0
     ? await prisma.message.findMany({
-        where: { conversationId: { in: convIds } },
+        where: { conversationId: { in: convIds }, isInternal: false },
         orderBy: { timestamp: 'desc' },
         distinct: ['conversationId'],
       })
     : [];
-  const lastMsgMap = new Map(lastMessages.map(m => [m.conversationId, m]));
+  const lastMsgMap = new Map(lastMessages.map((m: any) => [m.conversationId, m]));
 
   res.json({
-    conversations: conversations.map(c => {
-      const lastMsg = lastMsgMap.get(c.id);
-      return {
-        id: c.id,
-        contactPhone: c.contactPhone,
-        contactName: c.contactName,
-        channel: c.channel,
-        status: c.status,
-        lastMessageAt: c.lastMessageAt?.toISOString() ?? null,
-        unreadCount: c.unreadCount,
-        lastMessage: lastMsg ? {
-          body: lastMsg.body,
-          direction: lastMsg.direction,
-          timestamp: lastMsg.timestamp.toISOString(),
-        } : null,
-      };
-    }),
+    conversations: conversations.map((c: any) => serializeConversation(c, lastMsgMap.get(c.id))),
   });
+});
+
+app.get('/api/client/conversations/:id', requireAuth, requirePermission('dashboard:view'), async (req, res) => {
+  const auth = (req as AuthedRequest).auth;
+  const conv = await prisma.conversation.findFirst({
+    where: { id: req.params.id, organizationId: auth.organizationId },
+    include: { tags: { include: { tag: true } } },
+  });
+  if (!conv) return res.status(404).json({ error: 'NOT_FOUND' });
+  res.json({ conversation: serializeConversation(conv) });
+});
+
+app.patch('/api/client/conversations/:id', requireAuth, requirePermission('dashboard:view'), async (req, res) => {
+  const auth = (req as AuthedRequest).auth;
+  const schema = z.object({
+    assignedToId: z.string().nullable().optional(),
+    status: z.enum(['active', 'archived']).optional(),
+    priority: z.enum(['LOW', 'NORMAL', 'HIGH', 'URGENT']).optional(),
+    pipelineStage: z.string().optional(),
+    notes: z.string().optional(),
+    contactName: z.string().optional(),
+    contactEmail: z.string().email().optional(),
+    tags: z.array(z.string()).optional(), // array of tag IDs
+  });
+  const data = schema.parse(req.body);
+
+  const conv = await prisma.conversation.findFirst({
+    where: { id: req.params.id, organizationId: auth.organizationId },
+  });
+  if (!conv) return res.status(404).json({ error: 'NOT_FOUND' });
+
+  const { tags, ...rest } = data;
+
+  await prisma.conversation.update({
+    where: { id: conv.id },
+    data: {
+      ...rest,
+      ...(data.status === 'archived' ? { closedAt: new Date() } : data.status === 'active' ? { closedAt: null } : {}),
+    },
+  });
+
+  // Sync tags if provided
+  if (tags !== undefined) {
+    await prisma.conversationTag.deleteMany({ where: { conversationId: conv.id } });
+    if (tags.length > 0) {
+      await prisma.conversationTag.createMany({
+        data: tags.map(tagId => ({ conversationId: conv.id, tagId })),
+        skipDuplicates: true,
+      });
+    }
+  }
+
+  const updated = await prisma.conversation.findFirst({
+    where: { id: conv.id },
+    include: { tags: { include: { tag: true } } },
+  });
+
+  sseBroadcast(auth.organizationId, {
+    type: 'conversation_updated',
+    payload: serializeConversation(updated),
+  });
+
+  res.json({ ok: true, conversation: serializeConversation(updated) });
+});
+
+app.post('/api/client/conversations/:id/assign', requireAuth, requirePermission('dashboard:view'), async (req, res) => {
+  const auth = (req as AuthedRequest).auth;
+  const { userId } = z.object({ userId: z.string().nullable() }).parse(req.body);
+
+  const conv = await prisma.conversation.findFirst({
+    where: { id: req.params.id, organizationId: auth.organizationId },
+  });
+  if (!conv) return res.status(404).json({ error: 'NOT_FOUND' });
+
+  await prisma.conversation.update({
+    where: { id: conv.id },
+    data: { assignedToId: userId },
+  });
+
+  sseBroadcast(auth.organizationId, {
+    type: 'conversation_assigned',
+    payload: { conversationId: conv.id, assignedToId: userId },
+  });
+
+  res.json({ ok: true });
+});
+
+app.post('/api/client/conversations/:id/read', requireAuth, requirePermission('dashboard:view'), async (req, res) => {
+  const auth = (req as AuthedRequest).auth;
+  const conv = await prisma.conversation.findFirst({
+    where: { id: req.params.id, organizationId: auth.organizationId },
+  });
+  if (!conv) return res.status(404).json({ error: 'NOT_FOUND' });
+
+  await prisma.conversation.update({ where: { id: conv.id }, data: { unreadCount: 0 } });
+  await prisma.message.updateMany({
+    where: { conversationId: conv.id, direction: 'inbound', readByAgent: false },
+    data: { readByAgent: true },
+  });
+
+  res.json({ ok: true });
 });
 
 app.get('/api/client/conversations/:id/messages', requireAuth, requirePermission('dashboard:view'), async (req, res) => {
   const auth = (req as AuthedRequest).auth;
   const id = req.params.id;
   const limit = z.coerce.number().int().positive().max(100).default(50).parse(req.query.limit ?? '50');
+  const cursor = typeof req.query.cursor === 'string' ? req.query.cursor : undefined;
 
   const conversation = await prisma.conversation.findFirst({
     where: { id, organizationId: auth.organizationId },
+    include: { tags: { include: { tag: true } } },
   });
   if (!conversation) return res.status(404).json({ error: 'NOT_FOUND' });
 
   const messages = await prisma.message.findMany({
-    where: { conversationId: id },
-    orderBy: { timestamp: 'asc' },
-    take: limit,
+    where: {
+      conversationId: id,
+      ...(cursor ? { timestamp: { lt: new Date(cursor) } } : {}),
+    },
+    orderBy: { timestamp: 'desc' },
+    take: limit + 1,
   });
+
+  const hasMore = messages.length > limit;
+  const items = messages.slice(0, limit).reverse();
 
   // Mark as read
   if (conversation.unreadCount > 0) {
@@ -941,28 +1068,33 @@ app.get('/api/client/conversations/:id/messages', requireAuth, requirePermission
   }
 
   res.json({
-    conversation: {
-      id: conversation.id,
-      contactPhone: conversation.contactPhone,
-      contactName: conversation.contactName,
-      channel: conversation.channel,
-      status: conversation.status,
-    },
-    messages: messages.map(m => ({
+    conversation: serializeConversation(conversation),
+    messages: items.map((m: any) => ({
       id: m.id,
       direction: m.direction,
       body: m.body,
       mediaUrl: m.mediaUrl,
+      mediaType: m.mediaType,
       timestamp: m.timestamp.toISOString(),
       status: m.status,
+      isInternal: m.isInternal,
+      agentId: m.agentId,
+      readByAgent: m.readByAgent,
     })),
+    hasMore,
+    nextCursor: hasMore && items.length > 0 ? items[0].timestamp.toISOString() : null,
   });
 });
 
 app.post('/api/client/conversations/:id/messages', requireAuth, requirePermission('dashboard:view'), async (req, res) => {
   const auth = (req as AuthedRequest).auth;
   const id = req.params.id;
-  const body = z.object({ body: z.string().min(1).max(4096) }).parse(req.body);
+  const input = z.object({
+    body: z.string().min(1).max(4096),
+    isInternal: z.boolean().default(false),
+    mediaUrl: z.string().url().optional(),
+    mediaType: z.string().optional(),
+  }).parse(req.body);
 
   const conversation = await prisma.conversation.findFirst({
     where: { id, organizationId: auth.organizationId },
@@ -974,41 +1106,81 @@ app.post('/api/client/conversations/:id/messages', requireAuth, requirePermissio
       conversationId: conversation.id,
       organizationId: auth.organizationId,
       direction: 'outbound',
-      body: body.body,
+      body: input.body,
+      mediaUrl: input.mediaUrl,
+      mediaType: input.mediaType,
+      isInternal: input.isInternal,
+      agentId: auth.userId,
       timestamp: new Date(),
       status: 'sent',
     },
   });
 
-  await prisma.conversation.update({
-    where: { id: conversation.id },
-    data: { lastMessageAt: message.timestamp },
-  });
+  if (!input.isInternal) {
+    await prisma.conversation.update({
+      where: { id: conversation.id },
+      data: { lastMessageAt: message.timestamp, lastAgentId: auth.userId },
+    });
+  }
+
+  const serialized = {
+    id: message.id,
+    direction: message.direction,
+    body: message.body,
+    mediaUrl: message.mediaUrl,
+    mediaType: message.mediaType,
+    timestamp: message.timestamp.toISOString(),
+    status: message.status,
+    isInternal: message.isInternal,
+    agentId: message.agentId,
+    readByAgent: true,
+  };
 
   sseBroadcast(auth.organizationId, {
     type: 'new_message',
-    payload: {
-      conversationId: conversation.id,
-      message: {
-        id: message.id,
-        direction: message.direction,
-        body: message.body,
-        timestamp: message.timestamp.toISOString(),
-        status: message.status,
-      },
-    },
+    payload: { conversationId: conversation.id, message: serialized },
   });
 
-  res.json({
-    ok: true,
-    message: {
-      id: message.id,
-      direction: message.direction,
-      body: message.body,
-      timestamp: message.timestamp.toISOString(),
-      status: message.status,
-    },
+  res.json({ ok: true, message: serialized });
+});
+
+// ---- Tags CRUD ----
+
+app.get('/api/client/tags', requireAuth, requirePermission('dashboard:view'), async (req, res) => {
+  const auth = (req as AuthedRequest).auth;
+  const tags = await prisma.tag.findMany({
+    where: { organizationId: auth.organizationId },
+    orderBy: { name: 'asc' },
   });
+  res.json({ tags });
+});
+
+app.post('/api/client/tags', requireAuth, requirePermission('dashboard:view'), async (req, res) => {
+  const auth = (req as AuthedRequest).auth;
+  const input = z.object({
+    name: z.string().min(1).max(50),
+    color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).default('#00F0FF'),
+  }).parse(req.body);
+
+  const existing = await prisma.tag.findFirst({
+    where: { organizationId: auth.organizationId, name: input.name },
+  });
+  if (existing) return res.status(409).json({ error: 'TAG_EXISTS' });
+
+  const tag = await prisma.tag.create({
+    data: { organizationId: auth.organizationId, name: input.name, color: input.color },
+  });
+  res.json({ ok: true, tag });
+});
+
+app.delete('/api/client/tags/:id', requireAuth, requirePermission('dashboard:view'), async (req, res) => {
+  const auth = (req as AuthedRequest).auth;
+  const tag = await prisma.tag.findFirst({
+    where: { id: req.params.id, organizationId: auth.organizationId },
+  });
+  if (!tag) return res.status(404).json({ error: 'NOT_FOUND' });
+  await prisma.tag.delete({ where: { id: tag.id } });
+  res.json({ ok: true });
 });
 
 // ---- Meta Webhook (for future WhatsApp Business API) ----

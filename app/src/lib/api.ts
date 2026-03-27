@@ -14,14 +14,27 @@ export interface DashboardOverview {
   recentActivity: ActivityEvent[];
 }
 
+export interface Tag {
+  id: string;
+  name: string;
+  color: string;
+}
+
 export interface ConversationSummary {
   id: string;
   contactPhone: string;
   contactName: string | null;
+  contactEmail: string | null;
+  contactAvatar: string | null;
   channel: 'whatsapp' | 'instagram' | 'messenger' | 'web';
   status: 'active' | 'archived';
+  priority: 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
+  pipelineStage: string | null;
+  assignedToId: string | null;
+  notes: string | null;
   lastMessageAt: string | null;
   unreadCount: number;
+  tags: Tag[];
   lastMessage: {
     body: string;
     direction: 'inbound' | 'outbound';
@@ -34,16 +47,29 @@ export interface ChatMessage {
   direction: 'inbound' | 'outbound';
   body: string;
   mediaUrl?: string | null;
+  mediaType?: string | null;
   timestamp: string;
   status: 'sent' | 'delivered' | 'read' | 'failed';
+  isInternal?: boolean;
+  agentId?: string | null;
+  readByAgent?: boolean;
 }
 
 export interface ConversationDetail {
   id: string;
   contactPhone: string;
   contactName: string | null;
+  contactEmail: string | null;
+  contactAvatar: string | null;
   channel: string;
   status: string;
+  priority: string;
+  pipelineStage: string | null;
+  assignedToId: string | null;
+  notes: string | null;
+  tags: Tag[];
+  lastMessageAt: string | null;
+  unreadCount: number;
 }
 
 export interface ActivityEvent {
@@ -399,29 +425,75 @@ export const api = {
   async getConversations(params?: {
     status?: 'active' | 'archived';
     channel?: string;
+    assignedTo?: 'me' | 'unassigned' | string;
+    priority?: string;
+    tag?: string;
     search?: string;
-  }): Promise<{ conversations: ConversationSummary[] }> {
+    cursor?: string;
+    limit?: number;
+  }): Promise<{ conversations: ConversationSummary[]; nextCursor?: string; hasMore: boolean }> {
     const qs = new URLSearchParams();
     if (params?.status) qs.set('status', params.status);
     if (params?.channel) qs.set('channel', params.channel);
+    if (params?.assignedTo) qs.set('assignedTo', params.assignedTo);
+    if (params?.priority) qs.set('priority', params.priority);
+    if (params?.tag) qs.set('tag', params.tag);
     if (params?.search) qs.set('search', params.search);
+    if (params?.cursor) qs.set('cursor', params.cursor);
+    if (params?.limit) qs.set('limit', String(params.limit));
     return requestJson(`/api/client/conversations?${qs.toString()}`);
   },
 
-  async getMessages(conversationId: string): Promise<{
-    conversation: ConversationDetail;
-    messages: ChatMessage[];
-  }> {
-    return requestJson(`/api/client/conversations/${encodeURIComponent(conversationId)}/messages`);
+  async getConversation(id: string): Promise<{ conversation: ConversationDetail }> {
+    return requestJson(`/api/client/conversations/${encodeURIComponent(id)}`);
   },
 
-  async sendMessage(conversationId: string, body: string): Promise<{
+  async updateConversation(id: string, patch: {
+    status?: 'active' | 'archived';
+    priority?: 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
+    pipelineStage?: string | null;
+    notes?: string | null;
+    tags?: string[];
+    assignedToId?: string | null;
+  }): Promise<{ ok: boolean; conversation: ConversationSummary }> {
+    return requestJson(`/api/client/conversations/${encodeURIComponent(id)}`, {
+      method: 'PATCH',
+      body: JSON.stringify(patch),
+    });
+  },
+
+  async assignConversation(id: string, userId: string | null): Promise<{ ok: boolean }> {
+    return requestJson(`/api/client/conversations/${encodeURIComponent(id)}/assign`, {
+      method: 'POST',
+      body: JSON.stringify({ userId }),
+    });
+  },
+
+  async markConversationRead(id: string): Promise<{ ok: boolean }> {
+    return requestJson(`/api/client/conversations/${encodeURIComponent(id)}/read`, { method: 'POST' });
+  },
+
+  async getMessages(conversationId: string, cursor?: string): Promise<{
+    conversation: ConversationDetail;
+    messages: ChatMessage[];
+    hasMore: boolean;
+    nextCursor?: string;
+  }> {
+    const qs = cursor ? `?cursor=${encodeURIComponent(cursor)}` : '';
+    return requestJson(`/api/client/conversations/${encodeURIComponent(conversationId)}/messages${qs}`);
+  },
+
+  async sendMessage(conversationId: string, body: string, options?: {
+    isInternal?: boolean;
+    mediaUrl?: string;
+    mediaType?: string;
+  }): Promise<{
     ok: boolean;
     message: ChatMessage;
   }> {
     return requestJson(`/api/client/conversations/${encodeURIComponent(conversationId)}/messages`, {
       method: 'POST',
-      body: JSON.stringify({ body }),
+      body: JSON.stringify({ body, ...options }),
     });
   },
 
@@ -433,6 +505,22 @@ export const api = {
       stream.newMessage.delete(callback);
       releaseStream();
     };
+  },
+
+  // Tags
+  async getTags(): Promise<{ tags: Tag[] }> {
+    return requestJson('/api/client/tags');
+  },
+
+  async createTag(name: string, color?: string): Promise<{ ok: boolean; tag: Tag }> {
+    return requestJson('/api/client/tags', {
+      method: 'POST',
+      body: JSON.stringify({ name, color: color ?? '#00F0FF' }),
+    });
+  },
+
+  async deleteTag(id: string): Promise<{ ok: boolean }> {
+    return requestJson(`/api/client/tags/${encodeURIComponent(id)}`, { method: 'DELETE' });
   },
 
   // Stripe
